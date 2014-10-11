@@ -161,7 +161,7 @@ define(["jquery"], function($) {
         var id = args[0];
         var cls = args[1];
         if (cls == 'VertexBuffer') {
-            console.debug("Creating vertex buffer '{0}'.".format(id));
+            debug("Creating vertex buffer '{0}'.".format(id));
             c._ns[id] = {
                 object_type: cls, 
                 handle: c.gl.createBuffer(),
@@ -169,7 +169,7 @@ define(["jquery"], function($) {
             };
         }
         else if (cls == 'IndexBuffer') {
-            console.debug("Creating index buffer '{0}'.".format(id));
+            debug("Creating index buffer '{0}'.".format(id));
             c._ns[id] = {
                 object_type: cls, 
                 handle: c.gl.createBuffer(),
@@ -177,7 +177,7 @@ define(["jquery"], function($) {
             };
         }
         else if (cls == 'Program') {
-            console.debug("Creating program '{0}'.".format(id));
+            debug("Creating program '{0}'.".format(id));
             c._ns[id] = {
                 object_type: cls,
                 handle: c.gl.createProgram(),
@@ -192,15 +192,15 @@ define(["jquery"], function($) {
         var cls = c._ns[id].object_type;
         var handle = c._ns[id].handle;
         if (cls == 'VertexBuffer') {
-            console.debug("Deleting vertex buffer '{0}'.".format(id));
+            debug("Deleting vertex buffer '{0}'.".format(id));
             c.gl.deleteBuffer(handle);
         }
         else if (cls == 'IndexBuffer') {
-            console.debug("Deleting index buffer '{0}'.".format(id));
+            debug("Deleting index buffer '{0}'.".format(id));
             c.gl.deleteBuffer(handle);
         }
         else if (cls == 'Program') {
-            console.debug("Deleting program '{0}'.".format(id));
+            debug("Deleting program '{0}'.".format(id));
             c.gl.deleteProgram(handle);
         }
     };
@@ -214,12 +214,12 @@ define(["jquery"], function($) {
         var handle = c._ns[id].handle;
 
         // Compile shaders.
-        console.debug("Compiling shaders for program '{0}'.".format(id));
+        debug("Compiling shaders for program '{0}'.".format(id));
         var vs = compile_shader(c, 'VERTEX_SHADER', vertex_code);
         var fs = compile_shader(c, 'FRAGMENT_SHADER', fragment_code);
 
         // Attach shaders.
-        console.debug("Attaching shaders for program '{0}'".format(id));
+        debug("Attaching shaders for program '{0}'".format(id));
         attach_shaders(c, handle, vs, fs);
     }
 
@@ -248,14 +248,14 @@ define(["jquery"], function($) {
         // Upload the data.
         if (c._ns[buffer_id].size == 0) {
             // The existing buffer was empty: we create it.
-            console.debug("Allocating {0} elements in buffer '{1}'.".format(
+            debug("Allocating {0} elements in buffer '{1}'.".format(
                 size, buffer_id));
             c.gl.bufferData(gl_type, array, c.gl.STATIC_DRAW);
             c._ns[buffer_id].size = size;
         }
         else {
             // We reuse the existing buffer.
-            console.debug("Updating {0} elements in buffer '{1}', offset={2}.".format(
+            debug("Updating {0} elements in buffer '{1}', offset={2}.".format(
                 size, buffer_id, offset));
             c.gl.bufferSubData(gl_type, offset, array);
         }
@@ -271,7 +271,7 @@ define(["jquery"], function($) {
 
         var program_handle = c._ns[program_id].handle;
 
-        console.debug("Creating attribute '{0}' for program '{1}'.".format(
+        debug("Creating attribute '{0}' for program '{1}'.".format(
                 name, program_id
             ));
         var attribute_handle = create_attribute(c, program_handle, name);
@@ -300,7 +300,7 @@ define(["jquery"], function($) {
         if (c._ns[program_id].uniforms[name] == undefined) {
             // If necessary, we create the uniform and cache both its handle and
             // GL function.
-            console.debug("Creating uniform '{0}' for program '{1}'.".format(
+            debug("Creating uniform '{0}' for program '{1}'.".format(
                     name, program_id
                 ));
             var uniform_handle = c.gl.getUniformLocation(program_handle, name);
@@ -308,7 +308,7 @@ define(["jquery"], function($) {
             // We cache the uniform handle and the uniform function name as well.
             c._ns[program_id].uniforms[name] = [uniform_handle, uniform_function];
         }
-        console.debug("Setting uniform '{0}' to '{1}' with {2} elements.".format(
+        debug("Setting uniform '{0}' to '{1}' with {2} elements.".format(
                 name, value, value.length
             ));
         var uniform_info = c._ns[program_id].uniforms[name];
@@ -328,7 +328,7 @@ define(["jquery"], function($) {
         // Activate all attributes in the program.
         for (attribute_name in attributes) {
             var attribute = attributes[attribute_name];
-            console.debug("Activating attribute '{0}' for program '{1}'.".format(
+            debug("Activating attribute '{0}' for program '{1}'.".format(
                 attribute_name, program_id));
             activate_attribute(c, attribute.handle, attribute.vbo_id, 
                 attribute.type, attribute.stride, attribute.offset);
@@ -341,7 +341,7 @@ define(["jquery"], function($) {
             // Draw the program without index buffer.
             var start = selection[0];
             var count = selection[1];
-            console.debug("Rendering program '{0}' with {1}.".format(
+            debug("Rendering program '{0}' with {1}.".format(
                 program_id, mode));
             c.gl.drawArrays(c.gl[mode], start, count);
         }     
@@ -352,7 +352,7 @@ define(["jquery"], function($) {
             var count = selection[2];
             // Get the index buffer handle from the namespace.
             var index_buffer_handle = c._ns[index_buffer_id].handle;
-            console.debug("Rendering program '{0}' with {1} and index buffer '{2}'.".format(
+            debug("Rendering program '{0}' with {1} and index buffer '{2}'.".format(
                 program_id, mode, index_buffer_id));
             // Activate the index buffer.
             c.gl.bindBuffer(c.gl.ELEMENT_ARRAY_BUFFER, index_buffer_handle);
@@ -362,7 +362,7 @@ define(["jquery"], function($) {
 
         // Deactivate attributes.
         for (attribute_name in attributes) {
-            console.debug("Deactivating attribute '{0}' for program '{1}'.".format(
+            debug("Deactivating attribute '{0}' for program '{1}'.".format(
                 attribute_name, program_id));
             deactivate_attribute(c, attributes[attribute_name].handle);
         }
@@ -370,7 +370,7 @@ define(["jquery"], function($) {
 
     glir.prototype.func = function(c, args) {
         var name = args[0];
-        console.debug("Calling {0}({1}).".format(name, args.slice(1)));
+        debug("Calling {0}({1}).".format(name, args.slice(1)));
 
         // Handle enums: replace strings by global GL variables.
         for (var i = 1; i < args.length; i++) {

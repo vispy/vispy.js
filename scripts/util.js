@@ -14,3 +14,10 @@ if (!String.prototype.format) {
 function is_array(x) {
     return (Object.prototype.toString.call(x) === '[object Array]');
 }
+
+var DEBUG = true;
+function debug(msg) {
+    if (DEBUG){
+        console.debug(msg);
+    }
+}
