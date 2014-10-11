@@ -37,14 +37,17 @@ function attach_shaders(c, program, vertex, fragment) {
     }
 }
 
-function create_attribute(c, program, vbo_id, name, type, stride, offset) {
-    // program: program handle
+function create_attribute(c, program, name) {
+    var attribute_handle = c.gl.getAttribLocation(program, name);
+    return attribute_handle;
+}
+
+function activate_attribute(c, attribute_handle, vbo_id, type, stride, offset) {
+    // attribute_handle: attribute handle
     // vbo_id
-    // name: attribute name
     // type: float, vec3, etc.
     // stride: 0 by default
     // offset: 0 by default
-
     var _attribute_info = get_attribute_info(type);
     var attribute_type = _attribute_info[0];  // FLOAT, INT or BOOL
     var ndim = _attribute_info[1]; // 1, 2, 3 or 4
@@ -52,14 +55,11 @@ function create_attribute(c, program, vbo_id, name, type, stride, offset) {
     _vbo_info = c._ns[vbo_id];
     var vbo_handle = _vbo_info.handle;
 
-    var attribute_handle = c.gl.getAttribLocation(program, name);
     c.gl.bindBuffer(c.gl.ARRAY_BUFFER, vbo_handle);
-
     c.gl.enableVertexAttribArray(attribute_handle);
     c.gl.vertexAttribPointer(attribute_handle, ndim, 
                              c.gl[attribute_type],
                              false, stride, offset);
-    return attribute_handle;
 }
 
 function set_uniform(c, uniform_handle, uniform_function, value) {
@@ -256,11 +256,16 @@ define(["jquery"], function($) {
         console.debug("Creating attribute '{0}' for program '{1}'.".format(
                 name, program_id
             ));
-        var attribute_handle = create_attribute(c, program_handle, vbo_id,
-            name, type, stride, offset);
+        var attribute_handle = create_attribute(c, program_handle, name);
 
         // Store the attribute handle in the attributes array of the program.
-        c._ns[program_id].attributes[name] = attribute_handle;
+        c._ns[program_id].attributes[name] = {
+            handle: attribute_handle,
+            type: type,
+            vbo_id: vbo_id,
+            stride: stride,
+            offset: offset,
+        };
     }
 
     glir.prototype.uniform = function(c, args) {
@@ -300,6 +305,15 @@ define(["jquery"], function($) {
         var selection = args[2];
 
         var program_handle = c._ns[program_id].handle;
+        var attributes = c._ns[program_id].attributes;
+
+        for (attribute_name in attributes) {
+            var attribute = attributes[attribute_name];
+            console.debug("Activating attribute '{0}' for program '{1}'.".format(
+                attribute_name, program_id));
+            activate_attribute(c, attribute.handle, attribute.vbo_id, 
+                attribute.type, attribute.stride, attribute.offset);
+        }
 
         if (selection.length == 2) {
             var start = selection[0];
