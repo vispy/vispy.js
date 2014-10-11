@@ -168,6 +168,14 @@ define(["jquery"], function($) {
                 size: 0,  // current size of the buffer
             };
         }
+        else if (cls == 'IndexBuffer') {
+            console.debug("Creating index buffer '{0}'.".format(id));
+            c._ns[id] = {
+                object_type: cls, 
+                handle: c.gl.createBuffer(),
+                size: 0,  // current size of the buffer
+            };
+        }
         else if (cls == 'Program') {
             console.debug("Creating program '{0}'.".format(id));
             c._ns[id] = {
@@ -185,6 +193,10 @@ define(["jquery"], function($) {
         var handle = c._ns[id].handle;
         if (cls == 'VertexBuffer') {
             console.debug("Deleting vertex buffer '{0}'.".format(id));
+            c.gl.deleteBuffer(handle);
+        }
+        else if (cls == 'IndexBuffer') {
+            console.debug("Deleting index buffer '{0}'.".format(id));
             c.gl.deleteBuffer(handle);
         }
         else if (cls == 'Program') {
@@ -313,7 +325,7 @@ define(["jquery"], function($) {
         var program_handle = c._ns[program_id].handle;
         var attributes = c._ns[program_id].attributes;
 
-        // Activate all atributes.
+        // Activate all attributes in the program.
         for (attribute_name in attributes) {
             var attribute = attributes[attribute_name];
             console.debug("Activating attribute '{0}' for program '{1}'.".format(
@@ -322,21 +334,30 @@ define(["jquery"], function($) {
                 attribute.type, attribute.stride, attribute.offset);
         }
 
+        // Activate the program.
+        c.gl.useProgram(program_handle);
+
         if (selection.length == 2) {
             // Draw the program without index buffer.
             var start = selection[0];
             var count = selection[1];
-            c.gl.useProgram(program_handle);
             console.debug("Rendering program '{0}' with {1}.".format(
                 program_id, mode));
             c.gl.drawArrays(c.gl[mode], start, count);
         }     
         else if (selection.length == 3) {
             // Draw the program with index buffer.
-            var index_buffer_handle = selection[0];
+            var index_buffer_id = selection[0];
             var index_buffer_type = selection[1];
             var count = selection[2];
-            // TODO: index buffer
+            // Get the index buffer handle from the namespace.
+            var index_buffer_handle = c._ns[index_buffer_id].handle;
+            console.debug("Rendering program '{0}' with {1} and index buffer '{2}'.".format(
+                program_id, mode, index_buffer_id));
+            // Activate the index buffer.
+            c.gl.bindBuffer(c.gl.ELEMENT_ARRAY_BUFFER, index_buffer_handle);
+            // TODO: support index buffer offset? (last argument below, 0 by default)
+            c.gl.drawElements(c.gl[mode], count, c.gl[index_buffer_type], 0);
         }
 
         // Deactivate attributes.
