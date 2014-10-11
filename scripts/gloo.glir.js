@@ -372,7 +372,7 @@ define(["jquery"], function($) {
         var name = args[0];
         console.debug("Calling {0}({1}).".format(name, args.slice(1)));
 
-        // Replace strings by global GL variables.
+        // Handle enums: replace strings by global GL variables.
         for (var i = 1; i < args.length; i++) {
             if (typeof args[i] === 'string') {
                 args[i] = c.gl[args[i]];
