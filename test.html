@@ -39,9 +39,9 @@ require(["vispy"], function(vispy) {
         this.call(['CREATE', 'mytexcoords', 'VertexBuffer']);
         this.call(['DATA', 'mytexcoords', 0, new Float32Array(
             [0., 0.,
-             1., 0.,
-             0., 1.,
-             1., 1.,
+             2., 0.,
+             0., 2.,
+             2., 2.,
              ])]);
         
         this.call(['CREATE', 'myib', 'IndexBuffer']);
@@ -68,6 +68,7 @@ require(["vispy"], function(vispy) {
         
         this.call(['TEXTURE', 'myprogram', 'mytex', 'u_sampler', 0]);
         this.call(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
+        this.call(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
 
         // Enable transparency.
         this.call(['FUNC', 'blendFunc', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA']);

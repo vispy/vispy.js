@@ -393,7 +393,6 @@ define(["jquery"], function($) {
     }
 
     glir.prototype.interpolation = function(c, args) {
-
         var texture_id = args[0];
         var min = args[1];
         var mag = args[2];
@@ -403,6 +402,18 @@ define(["jquery"], function($) {
         c.gl.bindTexture(gl_type, texture_handle);
         c.gl.texParameteri(gl_type, c.gl.TEXTURE_MIN_FILTER, c.gl[min]);
         c.gl.texParameteri(gl_type, c.gl.TEXTURE_MAG_FILTER, c.gl[mag]);
+        c.gl.bindTexture(gl_type, null);
+    }
+
+    glir.prototype.wrapping = function(c, args) {
+        var texture_id = args[0];
+        var wrapping = args[1];
+        var texture_handle = c._ns[texture_id].handle;
+        
+        var gl_type = c.gl.TEXTURE_2D;
+        c.gl.bindTexture(gl_type, texture_handle);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_S, c.gl[wrapping[0]]);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_T, c.gl[wrapping[1]]);
         c.gl.bindTexture(gl_type, null);
     }
 
