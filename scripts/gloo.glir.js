@@ -67,6 +67,12 @@ function deactivate_attribute(c, attribute_handle) {
     c.gl.disableVertexAttribArray(attribute_handle);
 }
 
+function activate_texture(c, texture_handle, sampler_handle, texture_index) {
+    c.gl.activeTexture(c.gl.TEXTURE0 + texture_index);
+    c.gl.bindTexture(c.gl.TEXTURE_2D, texture_handle);
+    // c.gl.uniform1i(sampler_handle, 0);
+}
+
 function set_uniform(c, uniform_handle, uniform_function, value) {
     // Get a TypedArray.
     array = to_typed_array(value);
@@ -103,6 +109,11 @@ function get_attribute_info(type) {
 }
 
 function get_uniform_function(type) {
+    // Samplers are always uniform1i.
+    // if (type.indexOf('sampler') >= 0) {
+    //     return 'uniform1i';
+    // }
+
     // Find OpenGL attribute type.
     var type_char;
     var ndim;
@@ -176,6 +187,14 @@ define(["jquery"], function($) {
                 size: 0,  // current size of the buffer
             };
         }
+        else if (cls == 'Texture2D') {
+            debug("Creating texture '{0}'.".format(id));
+            c._ns[id] = {
+                object_type: cls, 
+                handle: c.gl.createTexture(),
+                size: 0,  // current size of the texture
+            };
+        }
         else if (cls == 'Program') {
             debug("Creating program '{0}'.".format(id));
             c._ns[id] = {
@@ -183,6 +202,7 @@ define(["jquery"], function($) {
                 handle: c.gl.createProgram(),
                 attributes: {},
                 uniforms: {},
+                textures: {},
             };
         }
     };
@@ -199,6 +219,10 @@ define(["jquery"], function($) {
             debug("Deleting index buffer '{0}'.".format(id));
             c.gl.deleteBuffer(handle);
         }
+        else if (cls == 'Texture2D') {
+            debug("Deleting texture '{0}'.".format(id));
+            c.gl.deleteTexture(handle);
+        }
         else if (cls == 'Program') {
             debug("Deleting program '{0}'.".format(id));
             c.gl.deleteProgram(handle);
@@ -206,20 +230,20 @@ define(["jquery"], function($) {
     };
 
     glir.prototype.shaders = function(c, args) {
-        var id = args[0];  // program id
+        var program_id = args[0];
         var vertex_code = args[1];
         var fragment_code = args[2];
 
         // Get the program handle.
-        var handle = c._ns[id].handle;
+        var handle = c._ns[program_id].handle;
 
         // Compile shaders.
-        debug("Compiling shaders for program '{0}'.".format(id));
+        debug("Compiling shaders for program '{0}'.".format(program_id));
         var vs = compile_shader(c, 'VERTEX_SHADER', vertex_code);
         var fs = compile_shader(c, 'FRAGMENT_SHADER', fragment_code);
 
         // Attach shaders.
-        debug("Attaching shaders for program '{0}'".format(id));
+        debug("Attaching shaders for program '{0}'".format(program_id));
         attach_shaders(c, handle, vs, fs);
     }
 
@@ -228,9 +252,9 @@ define(["jquery"], function($) {
         var offset = args[1];
         var data = args[2];
         var size = data.length;
-
-        var buffer_type = c._ns[buffer_id].object_type; // VertexBuffer or IndexBuffer
-        var buffer_handle = c._ns[buffer_id].handle;
+        var buffer = c._ns[buffer_id];
+        var buffer_type = buffer.object_type; // VertexBuffer, IndexBuffer, or Texture2D
+        var buffer_handle = buffer.handle;
         var gl_type;
         if (buffer_type == 'VertexBuffer') {
             gl_type = c.gl.ARRAY_BUFFER;
@@ -238,31 +262,56 @@ define(["jquery"], function($) {
         else if (buffer_type == 'IndexBuffer') {
             gl_type = c.gl.ELEMENT_ARRAY_BUFFER;
         }
+        else if (buffer_type == 'Texture2D') {
+            gl_type = c.gl.TEXTURE_2D;
+            // buffer.shape = args[3];  // [width, height]
+            // buffer.type = args[4];  // 'RGBA'
+        }
 
         // Get a TypedArray.
         var array = to_typed_array(data);
 
-        // Bind the buffer before setting the data.
-        c.gl.bindBuffer(gl_type, buffer_handle);
+        // Textures.
+        if (buffer_type == 'Texture2D') {
+            // The texture shape is given to the DATA command.
+            var shape = args[3];
+            var width = shape[0];
+            var height = shape[1];
 
-        // Upload the data.
-        if (c._ns[buffer_id].size == 0) {
-            // The existing buffer was empty: we create it.
-            debug("Allocating {0} elements in buffer '{1}'.".format(
-                size, buffer_id));
-            c.gl.bufferData(gl_type, array, c.gl.STATIC_DRAW);
-            c._ns[buffer_id].size = size;
+            // The texture type is given to the DATA command.
+            var texture_type = args[4];
+            var format = c.gl[texture_type];
+
+            debug("Allocating texture '{0}'.".format(buffer_id));
+            c.gl.bindTexture(gl_type, buffer_handle);
+            c.gl.texImage2D(gl_type, 0, format, width, height, 0, 
+                            format, c.gl.UNSIGNED_BYTE, array);
         }
-        else {
-            // We reuse the existing buffer.
-            debug("Updating {0} elements in buffer '{1}', offset={2}.".format(
-                size, buffer_id, offset));
-            c.gl.bufferSubData(gl_type, offset, array);
+        // Buffers
+        else
+        {
+            // Bind the buffer before setting the data.
+            c.gl.bindBuffer(gl_type, buffer_handle);
+
+            // Upload the data.
+            if (buffer.size == 0) {
+                // The existing buffer was empty: we create it.
+                debug("Allocating {0} elements in buffer '{1}'.".format(
+                    size, buffer_id));
+                c.gl.bufferData(gl_type, array, c.gl.STATIC_DRAW);
+                buffer.size = size;
+            }
+            else {
+                // We reuse the existing buffer.
+                debug("Updating {0} elements in buffer '{1}', offset={2}.".format(
+                    size, buffer_id, offset));
+                c.gl.bufferSubData(gl_type, offset, array);
+            }
         }
     }
 
     glir.prototype.attribute = function(c, args) {
-        var program_id = args[0];  // program id
+        var program_id = args[0];
         var name = args[1];
         var type = args[2];
         var vbo_id = args[3];
@@ -287,7 +336,7 @@ define(["jquery"], function($) {
     }
 
     glir.prototype.uniform = function(c, args) {
-        var program_id = args[0];  // program id
+        var program_id = args[0];
         var name = args[1];
         var type = args[2];
         var value = args[3];
@@ -308,6 +357,7 @@ define(["jquery"], function($) {
             // We cache the uniform handle and the uniform function name as well.
             c._ns[program_id].uniforms[name] = [uniform_handle, uniform_function];
         }
+
         debug("Setting uniform '{0}' to '{1}' with {2} elements.".format(
                 name, value, value.length
             ));
@@ -317,6 +367,40 @@ define(["jquery"], function($) {
         set_uniform(c, uniform_handle, uniform_function, value);
     }
 
+    glir.prototype.texture = function(c, args) {
+        var program_id = args[0];
+        var texture_id = args[1];
+        var sampler_name = args[2];
+        var texture_number = args[3];  // active texture
+
+        var texture_handle = c._ns[texture_id].handle;
+        var program_handle = c._ns[program_id].handle;
+        
+        debug("Initializing texture '{0}' for program '{1}'.".format(
+                texture_id, program_id
+            ));
+
+        // Set the sampler uniform value.
+        var sampler_handle = c.gl.getUniformLocation(program_handle, sampler_name);
+        c.gl.uniform1i(sampler_handle, texture_number);
+        
+        // Set texture options.
+        // TODO: texture filtering
+        var gl_type = c.gl.TEXTURE_2D;
+        c.gl.bindTexture(gl_type, texture_handle);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_MIN_FILTER, c.gl.LINEAR);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_MAG_FILTER, c.gl.NEAREST);
+        // c.gl.generateMipmap(gl.TEXTURE_2D);
+        c.gl.bindTexture(gl_type, null);
+
+        c._ns[program_id].textures[texture_id] = {
+            sampler_name: sampler_name,
+            sampler_handle: sampler_handle,
+            number: texture_number,
+            handle: texture_handle,
+        };  
+    }
+
     glir.prototype.draw = function(c, args) {
         var program_id = args[0];
         var mode = args[1];
@@ -324,6 +408,7 @@ define(["jquery"], function($) {
 
         var program_handle = c._ns[program_id].handle;
         var attributes = c._ns[program_id].attributes;
+        var textures = c._ns[program_id].textures;
 
         // Activate all attributes in the program.
         for (attribute_name in attributes) {
@@ -334,9 +419,18 @@ define(["jquery"], function($) {
                 attribute.type, attribute.stride, attribute.offset);
         }
 
+        // Activate all textures in the program.
+        for (texture_id in textures) {
+            var texture = textures[texture_id];
+            debug("Activating texture '{0}' for program '{1}'.".format(
+                texture_id, program_id));
+            activate_texture(c, texture.handle, texture.sampler_handle, texture.number);
+        }
+
         // Activate the program.
         c.gl.useProgram(program_handle);
 
+        // Draw the program.
         if (selection.length == 2) {
             // Draw the program without index buffer.
             var start = selection[0];
