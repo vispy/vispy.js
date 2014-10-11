@@ -383,15 +383,6 @@ define(["jquery"], function($) {
         // Set the sampler uniform value.
         var sampler_handle = c.gl.getUniformLocation(program_handle, sampler_name);
         c.gl.uniform1i(sampler_handle, texture_number);
-        
-        // Set texture options.
-        // TODO: texture filtering
-        var gl_type = c.gl.TEXTURE_2D;
-        c.gl.bindTexture(gl_type, texture_handle);
-        c.gl.texParameteri(gl_type, c.gl.TEXTURE_MIN_FILTER, c.gl.LINEAR);
-        c.gl.texParameteri(gl_type, c.gl.TEXTURE_MAG_FILTER, c.gl.NEAREST);
-        // c.gl.generateMipmap(gl.TEXTURE_2D);
-        c.gl.bindTexture(gl_type, null);
 
         c._ns[program_id].textures[texture_id] = {
             sampler_name: sampler_name,
@@ -399,6 +390,20 @@ define(["jquery"], function($) {
             number: texture_number,
             handle: texture_handle,
         };  
+    }
+
+    glir.prototype.interpolation = function(c, args) {
+
+        var texture_id = args[0];
+        var min = args[1];
+        var mag = args[2];
+        var texture_handle = c._ns[texture_id].handle;
+        
+        var gl_type = c.gl.TEXTURE_2D;
+        c.gl.bindTexture(gl_type, texture_handle);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_MIN_FILTER, c.gl[min]);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_MAG_FILTER, c.gl[mag]);
+        c.gl.bindTexture(gl_type, null);
     }
 
     glir.prototype.draw = function(c, args) {
