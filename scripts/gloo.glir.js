@@ -55,11 +55,16 @@ function activate_attribute(c, attribute_handle, vbo_id, type, stride, offset) {
     _vbo_info = c._ns[vbo_id];
     var vbo_handle = _vbo_info.handle;
 
-    c.gl.bindBuffer(c.gl.ARRAY_BUFFER, vbo_handle);
     c.gl.enableVertexAttribArray(attribute_handle);
+    c.gl.bindBuffer(c.gl.ARRAY_BUFFER, vbo_handle);
     c.gl.vertexAttribPointer(attribute_handle, ndim, 
                              c.gl[attribute_type],
                              false, stride, offset);
+}
+
+function deactivate_attribute(c, attribute_handle) {
+    // c.gl.bindBuffer(c.gl.GL_ARRAY_BUFFER, 0);
+    c.gl.disableVertexAttribArray(attribute_handle);
 }
 
 function set_uniform(c, uniform_handle, uniform_function, value) {
@@ -225,9 +230,10 @@ define(["jquery"], function($) {
         // Get a TypedArray.
         var array = to_typed_array(data);
 
+        // Bind the buffer before setting the data.
         c.gl.bindBuffer(gl_type, buffer_handle);
 
-        // Allocate buffer or reallocate buffer
+        // Upload the data.
         if (c._ns[buffer_id].size == 0) {
             // The existing buffer was empty: we create it.
             console.debug("Allocating {0} elements in buffer '{1}'.".format(
@@ -307,6 +313,7 @@ define(["jquery"], function($) {
         var program_handle = c._ns[program_id].handle;
         var attributes = c._ns[program_id].attributes;
 
+        // Activate all atributes.
         for (attribute_name in attributes) {
             var attribute = attributes[attribute_name];
             console.debug("Activating attribute '{0}' for program '{1}'.".format(
@@ -316,6 +323,7 @@ define(["jquery"], function($) {
         }
 
         if (selection.length == 2) {
+            // Draw the program without index buffer.
             var start = selection[0];
             var count = selection[1];
             c.gl.useProgram(program_handle);
@@ -324,10 +332,18 @@ define(["jquery"], function($) {
             c.gl.drawArrays(c.gl[mode], start, count);
         }     
         else if (selection.length == 3) {
+            // Draw the program with index buffer.
             var index_buffer_handle = selection[0];
             var index_buffer_type = selection[1];
             var count = selection[2];
             // TODO: index buffer
+        }
+
+        // Deactivate attributes.
+        for (attribute_name in attributes) {
+            console.debug("Deactivating attribute '{0}' for program '{1}'.".format(
+                attribute_name, program_id));
+            deactivate_attribute(c, attributes[attribute_name].handle);
         }
     }
 
