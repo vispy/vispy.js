@@ -73,6 +73,27 @@ function activate_texture(c, texture_handle, sampler_handle, texture_index) {
     // c.gl.uniform1i(sampler_handle, 0);
 }
 
+function set_texture_data(c, object_handle, gl_type, format, width, height, array) {
+    c.gl.bindTexture(gl_type, object_handle);
+    c.gl.texImage2D(gl_type, 0, format, width, height, 0, 
+                    format, c.gl.UNSIGNED_BYTE, array);
+}
+
+function set_buffer_data(c, object_handle, gl_type, offset, array, reuse) {
+    // Bind the buffer before setting the data.
+    c.gl.bindBuffer(gl_type, object_handle);
+
+    // Upload the data.
+    if (!reuse) {
+        // The existing buffer was empty: we create it.
+        c.gl.bufferData(gl_type, array, c.gl.STATIC_DRAW);
+    }
+    else {
+        // We reuse the existing buffer.
+        c.gl.bufferSubData(gl_type, offset, array);
+    }
+}
+
 function set_uniform(c, uniform_handle, uniform_function, value) {
     // Get a TypedArray.
     array = to_typed_array(value);
@@ -257,32 +278,51 @@ define(["jquery"], function($) {
         attach_shaders(c, handle, vs, fs);
     }
 
+    glir.prototype.size = function(c, args) {
+        var id = args[0];
+        var size = args[1];
+        var format = args[2];
+        var object = c._ns[id];
+        var object_type = object.object_type;
+
+        if (object_type == 'VertexBuffer') {
+            gl_type = c.gl.ARRAY_BUFFER;
+        }
+        else if (object_type == 'IndexBuffer') {
+            gl_type = c.gl.ELEMENT_ARRAY_BUFFER;
+        }
+        else if (object_type == 'Texture2D') {
+            gl_type = c.gl.TEXTURE_2D;
+            // object.shape = args[3];  // [width, height]
+            // object.type = args[4];  // 'RGBA'
+        }
+
+    }
+
     glir.prototype.data = function(c, args) {
-        var buffer_id = args[0];
+        var object_id = args[0];
         var offset = args[1];
         var data = args[2];
         var size = data.length;
-        var buffer = c._ns[buffer_id];
-        var buffer_type = buffer.object_type; // VertexBuffer, IndexBuffer, or Texture2D
-        var buffer_handle = buffer.handle;
+        var object = c._ns[object_id];
+        var object_type = object.object_type; // VertexBuffer, IndexBuffer, or Texture2D
+        var object_handle = object.handle;
         var gl_type;
-        if (buffer_type == 'VertexBuffer') {
+        if (object_type == 'VertexBuffer') {
             gl_type = c.gl.ARRAY_BUFFER;
         }
-        else if (buffer_type == 'IndexBuffer') {
+        else if (object_type == 'IndexBuffer') {
             gl_type = c.gl.ELEMENT_ARRAY_BUFFER;
         }
-        else if (buffer_type == 'Texture2D') {
+        else if (object_type == 'Texture2D') {
             gl_type = c.gl.TEXTURE_2D;
-            // buffer.shape = args[3];  // [width, height]
-            // buffer.type = args[4];  // 'RGBA'
         }
 
         // Get a TypedArray.
         var array = to_typed_array(data);
 
         // Textures.
-        if (buffer_type == 'Texture2D') {
+        if (object_type.indexOf('Texture') >= 0) {
             // The texture shape is given to the DATA command.
             var shape = args[3];
             var width = shape[0];
@@ -292,31 +332,16 @@ define(["jquery"], function($) {
             var texture_type = args[4];
             var format = c.gl[texture_type];
 
-            debug("Allocating texture '{0}'.".format(buffer_id));
-            c.gl.bindTexture(gl_type, buffer_handle);
-            c.gl.texImage2D(gl_type, 0, format, width, height, 0, 
-                            format, c.gl.UNSIGNED_BYTE, array);
+            debug("Setting texture data for '{0}'.".format(object_id));
+            set_texture_data(c, object_handle, gl_type, format, width, height, array)
         }
         // Buffers
         else
         {
-            // Bind the buffer before setting the data.
-            c.gl.bindBuffer(gl_type, buffer_handle);
-
-            // Upload the data.
-            if (buffer.size == 0) {
-                // The existing buffer was empty: we create it.
-                debug("Allocating {0} elements in buffer '{1}'.".format(
-                    size, buffer_id));
-                c.gl.bufferData(gl_type, array, c.gl.STATIC_DRAW);
-                buffer.size = size;
-            }
-            else {
-                // We reuse the existing buffer.
-                debug("Updating {0} elements in buffer '{1}', offset={2}.".format(
-                    size, buffer_id, offset));
-                c.gl.bufferSubData(gl_type, offset, array);
-            }
+            debug("Setting buffer data for '{0}'.".format(object_id));
+            // Reuse the buffer if the existing size is not null.
+            set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0)
+            object.size = size;
         }
     }
 

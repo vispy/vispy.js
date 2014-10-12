@@ -29,6 +29,7 @@ require(["vispy"], function(vispy) {
     // Initialize the scene.
     c.on_initialize(function (event) {
         this.call(['CREATE', 'myvbo', 'VertexBuffer']);
+        this.call(['SIZE', 'myvbo', 8]);
         this.call(['DATA', 'myvbo', 0, new Float32Array(
             [-0.5, -0.5, 
               0.5, -0.5, 
