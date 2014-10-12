@@ -15,9 +15,9 @@ function is_array(x) {
     return (Object.prototype.toString.call(x) === '[object Array]');
 }
 
-var DEBUG = true;
+var VISPY_DEBUG = false;
 function debug(msg) {
-    if (DEBUG){
+    if (VISPY_DEBUG){
         console.debug(msg);
     }
 }
