@@ -84,7 +84,7 @@ require(["vispy"], function(vispy) {
     // Draw the scene.
     c.on_paint(function(event) {
         this.call(['FUNC', 'clearColor', 0, 0, 0, 1]);
-        this.call(['FUNC', 'clear', 'COLOR_BUFFER_BIT']);
+        this.call(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
         this.call(['DRAW', 'myprogram', 'TRIANGLES',
                                  ['myib', 'UNSIGNED_SHORT', 6]]);
     });

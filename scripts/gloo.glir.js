@@ -136,6 +136,16 @@ function get_uniform_function(type) {
     return 'uniform{0}{1}v'.format(ndim, type_char);
 }
 
+function parse_enum(c, str) {
+    // Parse an enum or combination of enums stored in a string.
+    var strs = str.split('|');
+    var value = 0;
+    for (var i = 0; i < strs.length; i++) {
+        var name = strs[i].toUpperCase().trim();
+        value = value | c.gl[name];
+    }
+    return value;
+}
 
 /* Creation of vispy.gloo.glir */
 define(["jquery"], function($) {
@@ -485,7 +495,7 @@ define(["jquery"], function($) {
         // Handle enums: replace strings by global GL variables.
         for (var i = 1; i < args.length; i++) {
             if (typeof args[i] === 'string') {
-                args[i] = c.gl[args[i]];
+                args[i] = parse_enum(c, args[i]);
             }
         }
 
