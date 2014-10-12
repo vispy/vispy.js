@@ -157,6 +157,15 @@ function get_uniform_function(type) {
     return 'uniform{0}{1}v'.format(ndim, type_char);
 }
 
+var _gl_type_map = {
+    VertexBuffer: 'ARRAY_BUFFER',
+    IndexBuffer: 'ELEMENT_ARRAY_BUFFER',
+    Texture2D: 'TEXTURE_2D',
+};
+function get_gl_type(object_type) {
+    return _gl_type_map[object_type];
+}
+
 function parse_enum(c, str) {
     // Parse an enum or combination of enums stored in a string.
     var strs = str.split('|');
@@ -284,19 +293,9 @@ define(["jquery"], function($) {
         var format = args[2];
         var object = c._ns[id];
         var object_type = object.object_type;
+        var gl_type = c.gl[get_gl_type(object_type)];
 
-        if (object_type == 'VertexBuffer') {
-            gl_type = c.gl.ARRAY_BUFFER;
-        }
-        else if (object_type == 'IndexBuffer') {
-            gl_type = c.gl.ELEMENT_ARRAY_BUFFER;
-        }
-        else if (object_type == 'Texture2D') {
-            gl_type = c.gl.TEXTURE_2D;
-            // object.shape = args[3];  // [width, height]
-            // object.type = args[4];  // 'RGBA'
-        }
-
+        
     }
 
     glir.prototype.data = function(c, args) {
@@ -307,16 +306,7 @@ define(["jquery"], function($) {
         var object = c._ns[object_id];
         var object_type = object.object_type; // VertexBuffer, IndexBuffer, or Texture2D
         var object_handle = object.handle;
-        var gl_type;
-        if (object_type == 'VertexBuffer') {
-            gl_type = c.gl.ARRAY_BUFFER;
-        }
-        else if (object_type == 'IndexBuffer') {
-            gl_type = c.gl.ELEMENT_ARRAY_BUFFER;
-        }
-        else if (object_type == 'Texture2D') {
-            gl_type = c.gl.TEXTURE_2D;
-        }
+        var gl_type = c.gl[get_gl_type(object_type)];
 
         // Get a TypedArray.
         var array = to_typed_array(data);
