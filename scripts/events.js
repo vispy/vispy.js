@@ -1,6 +1,8 @@
 /* Internal functions */
 function get_pos(c, e) {
-    return [e.clientX - c.offsetLeft, e.clientY - c.offsetTop];
+    var rect = c.getBoundingClientRect();
+    return [e.clientX - rect.left,
+            e.clientY - rect.top];
 }
 
 function normalize_pos(c, pos) {
@@ -147,23 +149,28 @@ VispyCanvas.prototype.on_paint = function(f) {
 
 VispyCanvas.prototype.initialize = function() {
     var event = gen_initialize_event(this);
+    this._set_size();
     this._initialize(event);
 };
+VispyCanvas.prototype._set_size = function(size) {
+    if (size == undefined) {
+        size = [this.$el.width(), this.$el.height()];
+    }
+    this.size = size;
+    this.width = size[0];
+    this.height = size[1];
+    return size;
+}
 VispyCanvas.prototype.paint = function() {
     var event = gen_paint_event(this);
     this._paint(event);
 };
 VispyCanvas.prototype.update = VispyCanvas.prototype.paint;
 VispyCanvas.prototype.resize = function(size) {
-    if (size == undefined) {
-        var size = [this.$el.width(), this.$el.height()];
-    }
+    size = this._set_size(size);
     var event = gen_resize_event(this, size);
     this.gl.canvas.width = size[0];
     this.gl.canvas.height = size[1];
-    this.size = size;
-    this.width = size[0];
-    this.height = size[1];
     this._resize(event);
 };
 
