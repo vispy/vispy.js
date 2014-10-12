@@ -304,7 +304,7 @@ function init_app(c) {
 
 
 /* Creation of vispy.events */
-define(["jquery", "jquery-mousewheel", "jqueryui", "screenfull"], function($) {
+define(["screenfull"], function() {
     var events = function() {
         // Constructor.
 

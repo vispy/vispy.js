@@ -7,7 +7,7 @@ function init_webgl(c) {
 
 
 /* Creation of vispy.gloo */
-define(["jquery", "gloo.glir"], function($, glir) {
+define(["gloo.glir"], function(glir) {
     var gloo = function() {
         this.glir = glir;
         // Constructor.

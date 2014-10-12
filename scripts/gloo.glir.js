@@ -179,7 +179,7 @@ function parse_enum(c, str) {
 }
 
 /* Creation of vispy.gloo.glir */
-define(["jquery"], function($) {
+define(function() {
     var glir = function() {
         var that = this;
         // Constructor.

@@ -1,11 +1,12 @@
 // Require paths.
 require.config({
-  paths: {
-    "jquery": "lib/jquery-ui/external/jquery/jquery",
-    "jquery-mousewheel": "lib/jquery.mousewheel.min",
-    "jquery-ui": "lib/jquery-ui/jquery-ui.min",
-    "screenfull": "lib/screenfull.min",
-  }
+    paths: {
+        // "jquery": "lib/jquery-ui/external/jquery/jquery",
+        // "jquery": "lib/jquery.min",
+        // "jqueryui": "lib/jquery-ui/jquery-ui.min",
+        // "jquery-mousewheel": "lib/jquery.mousewheel.min",
+        "screenfull": "lib/screenfull.min",
+    }
 });
 
 function VispyCanvas($el) {
@@ -13,8 +14,8 @@ function VispyCanvas($el) {
 }
 
 // Vispy library entry point.
-define(["jquery", "events", "gloo", "util", "data"], 
-    function($, events, gloo) {
+define(["events", "gloo", "util", "data"], 
+    function(events, gloo) {
         var vispy = function() {
             // Constructor of the Vispy library.
             this.events = events;
