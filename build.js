@@ -3,8 +3,8 @@
     baseUrl: "scripts",
     paths: {
         "jquery": "lib/jquery-ui/external/jquery/jquery",
+        "jqueryui": "lib/jquery-ui/jquery-ui.min",
         "jquery-mousewheel": "lib/jquery.mousewheel.min",
-        "jquery-ui": "lib/jquery-ui/jquery-ui.min",
         "screenfull": "lib/screenfull.min",
     },
     name: "vispy",
