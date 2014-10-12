@@ -162,6 +162,7 @@ var _gl_type_map = {
     IndexBuffer: 'ELEMENT_ARRAY_BUFFER',
     Texture2D: 'TEXTURE_2D',
 };
+
 function get_gl_type(object_type) {
     return _gl_type_map[object_type];
 }
@@ -233,6 +234,7 @@ define(["jquery"], function($) {
                 object_type: cls, 
                 handle: c.gl.createTexture(),
                 size: 0,  // current size of the texture
+                shape: [],
             };
         }
         else if (cls == 'Program') {
@@ -288,14 +290,35 @@ define(["jquery"], function($) {
     }
 
     glir.prototype.size = function(c, args) {
-        var id = args[0];
-        var size = args[1];
-        var format = args[2];
-        var object = c._ns[id];
+        var object_id = args[0];
+        var size = args[1];  // WARNING: size must be in bytes!
+        var format = args[2];  
+        var object = c._ns[object_id];
+        var object_handle = object.handle;
         var object_type = object.object_type;
         var gl_type = c.gl[get_gl_type(object_type)];
 
-        
+        // Textures.
+        if (object_type.indexOf('Texture') >= 0) {
+            // format is 'LUMINANCE', 'ALPHA', 'LUMINANCE_ALPHA', 'RGB' or 'RGBA'
+            object.format = format.toUpperCase();
+            debug("Setting texture size to {1} for '{0}'.".format(object_id, size));
+            // HACK: it doesn't seem we can change the texture size without allocating
+            // a buffer in WebGL, so we just store the size and format in the object,
+            // and we'll use this information in the subsequent DATA call.
+            // set_texture_data(c, object_handle, gl_type, c.gl[object.format], 
+            //     size[0], size[1], size)
+        }
+        // Buffers
+        else
+        {
+            debug("Setting buffer size to {1} for '{0}'.".format(object_id, size));
+            // Reuse the buffer if the existing size is not null.
+            set_buffer_data(c, object_handle, gl_type, 0, size, false)
+        }
+        // Save the size.
+        object.size = size;
+
     }
 
     glir.prototype.data = function(c, args) {
@@ -313,24 +336,25 @@ define(["jquery"], function($) {
 
         // Textures.
         if (object_type.indexOf('Texture') >= 0) {
-            // The texture shape is given to the DATA command.
-            var shape = args[3];
+            // The texture shape was specified in SIZE
+            var shape = object.size;
             var width = shape[0];
             var height = shape[1];
 
-            // The texture type is given to the DATA command.
-            var texture_type = args[4];
-            var format = c.gl[texture_type];
+            // The texture format was specified in SIZE.
+            var format = c.gl[object.format];
 
             debug("Setting texture data for '{0}'.".format(object_id));
-            set_texture_data(c, object_handle, gl_type, format, width, height, array)
+            // QUESTION: how to support offset for textures?
+            set_texture_data(c, object_handle, gl_type, format, width, height, array);
+            object.shape = shape;
         }
         // Buffers
         else
         {
             debug("Setting buffer data for '{0}'.".format(object_id));
             // Reuse the buffer if the existing size is not null.
-            set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0)
+            set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0);
             object.size = size;
         }
     }
@@ -491,7 +515,6 @@ define(["jquery"], function($) {
                 program_id, mode, index_buffer_id));
             // Activate the index buffer.
             c.gl.bindBuffer(c.gl.ELEMENT_ARRAY_BUFFER, index_buffer_handle);
-            // TODO: support index buffer offset? (last argument below, 0 by default)
             c.gl.drawElements(c.gl[mode], count, c.gl[index_buffer_type], 0);
         }
 

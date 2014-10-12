@@ -29,7 +29,7 @@ require(["vispy"], function(vispy) {
     // Initialize the scene.
     c.on_initialize(function (event) {
         this.call(['CREATE', 'myvbo', 'VertexBuffer']);
-        this.call(['SIZE', 'myvbo', 8]);
+        this.call(['SIZE', 'myvbo', 8*4]);
         this.call(['DATA', 'myvbo', 0, new Float32Array(
             [-0.5, -0.5, 
               0.5, -0.5, 
@@ -51,12 +51,13 @@ require(["vispy"], function(vispy) {
              ])]);
 
         this.call(['CREATE', 'mytex', 'Texture2D']);
+        this.call(['SIZE', 'mytex', [2, 2], 'RGBA']);
         this.call(['DATA', 'mytex', [0, 0], new Uint8Array(
             [100,100,100,255,
              255,255,255,255,
              255,255,255,255,
              100,100,100,255]
-             ), [2, 2], 'RGBA']); // TODO: put this in SIZE
+             )]);
 
         this.call(['CREATE', 'myprogram', 'Program']);
         this.call(['SHADERS', 'myprogram', VS, FS]);
