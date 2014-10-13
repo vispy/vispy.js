@@ -199,9 +199,12 @@ VispyCanvas.prototype.resizable = function() {
 
 
 /* Event queue prototype */
-function EventQueue() {
+function EventQueue(maxlen) {
+    if (maxlen == undefined) {
+        maxlen = 100;
+    }
     this._queue = [];
-    this.maxlen = 100;
+    this.maxlen = maxlen;
 }
 EventQueue.prototype.clear = function() {
     this._queue = [];
