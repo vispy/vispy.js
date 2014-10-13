@@ -209,8 +209,36 @@ function EventQueue(maxlen) {
 EventQueue.prototype.clear = function() {
     this._queue = [];
 }
-EventQueue.prototype.append = function(e) {
-    this._queue.push(e);
+EventQueue.prototype.append = function(e, compress) {
+    if (compress == undefined) {
+        compress = true;
+    }
+    if (compress) {
+        // If the event type is identical to the last event, we
+        // just update the parameters instead of pushing a new event.
+        var last_event = this._queue.slice(-1);
+        // TODO: refactor this
+        if (last_event.type == event.type) {
+            if (event.type == 'mouse_move') {
+                // buttons, is_dragging, modifiers
+                if ((event.buttons == last_event.buttons) &
+                    (event.is_dragging == last_event.is_dragging) &
+                    (event.modifiers == last_event.modifiers)) {
+                    last_event.pos = event.pos;
+                }
+                else {
+                    this._queue.push(e);
+                }
+            }
+            else {
+                // TODO: other event types
+            }
+        }
+    }
+    else {
+        this._queue.push(e);
+    }
+    console.log(this._queue.length);
     // Remove the oldest element if the queue is longer than the maximum allowed side.
     if (this._queue.length > this.maxlen) {
         this._queue.shift();
