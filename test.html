@@ -79,7 +79,7 @@ require(["vispy"], function(vispy) {
         this.call(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
             new Float32Array([1., 1., 1.])]);
         
-        this.call(['TEXTURE', 'myprogram', 'mytex', 'u_sampler', 0]);
+        this.call(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
         this.call(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
         this.call(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
 

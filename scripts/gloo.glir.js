@@ -318,7 +318,6 @@ define(function() {
         }
         // Save the size.
         object.size = size;
-
     }
 
     glir.prototype.data = function(c, args) {
@@ -418,15 +417,17 @@ define(function() {
 
     glir.prototype.texture = function(c, args) {
         var program_id = args[0];
-        var texture_id = args[1];
-        var sampler_name = args[2];
-        var texture_number = args[3];  // active texture
+        var sampler_name = args[1];
+        var texture_id = args[2];
+        // var texture_number = args[3];  // active texture
 
         var texture_handle = c._ns[texture_id].handle;
         var program_handle = c._ns[program_id].handle;
+        // The texture number is the number of textures existing in the program.
+        var texture_number = Object.keys(c._ns[program_id].textures).length;
         
-        debug("Initializing texture '{0}' for program '{1}'.".format(
-                texture_id, program_id
+        debug("Initializing texture '{0}' number {1} for program '{2}'.".format(
+                texture_id, texture_number, program_id
             ));
 
         // Set the sampler uniform value.
