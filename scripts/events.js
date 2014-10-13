@@ -53,7 +53,7 @@ function gen_mouse_event(c, e, type) {
         'delta': null,
         'press_event': press_event,
         
-        'last_event': last_event,  // WARNING: recursion problems?
+        'last_event': null,  // HACK: disabled to avoid recursion problems
     }
     return event;
 }
@@ -90,7 +90,7 @@ function gen_key_event(c, e, type) {
         'modifiers': modifiers,
         'key': get_key(e),
         
-        'last_event': last_event,  // WARNING: recursion problems?
+        'last_event': null,  // HACK: disabled to avoid recursion problems
     }
     return event;
 }
@@ -218,6 +218,7 @@ EventQueue.prototype.append = function(e) {
         this._queue[0].last_event = null;
     }
 }
+// TODO: compress the queue with events of the same type
 EventQueue.prototype.get = function() {
     return this._queue;
 }
@@ -263,7 +264,7 @@ function init_app(c) {
         c._mouse_move(event);
         
         // Save the last event.
-        c._eventinfo.last_event = event;
+        // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     c.$el.mousedown(function(e) {
@@ -276,7 +277,7 @@ function init_app(c) {
         // Save the last press event.
         c._eventinfo.press_event = event;
         // Save the last event.
-        c._eventinfo.last_event = event;
+        // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     c.$el.mouseup(function(e) {
@@ -289,7 +290,7 @@ function init_app(c) {
         // Reset the last press event.
         c._eventinfo.press_event = null;
         // Save the last event.
-        c._eventinfo.last_event = event;
+        // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     c.$el.click(function(e) {
@@ -309,7 +310,7 @@ function init_app(c) {
         c._mouse_wheel(event);
         
         // Save the last event.
-        c._eventinfo.last_event = event;
+        // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     
@@ -325,7 +326,7 @@ function init_app(c) {
         c._key_press(event);
         
         // Save the last event.
-        c._eventinfo.last_event = event;
+        // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     c.$el.keyup(function(e) {
@@ -335,7 +336,7 @@ function init_app(c) {
         c._key_release(event);
         
         // Save the last event.
-        c._eventinfo.last_event = event;
+        // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     c.$el.keydown(function(e) {
