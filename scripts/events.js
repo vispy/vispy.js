@@ -214,6 +214,8 @@ EventQueue.prototype.append = function(e) {
     // Remove the oldest element if the queue is longer than the maximum allowed side.
     if (this._queue.length > this.maxlen) {
         this._queue.shift();
+        // Remove the reference to the removed event in order to clean the GC.
+        this._queue[0].last_event = null;
     }
 }
 EventQueue.prototype.get = function() {
@@ -291,7 +293,6 @@ function init_app(c) {
         c.event_queue.append(event);
     });
     c.$el.click(function(e) {
-        console.log(c.event_queue.length);
         // Reset the last press event.
         c._eventinfo.press_event = null;
     });
