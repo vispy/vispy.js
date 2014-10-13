@@ -197,6 +197,31 @@ VispyCanvas.prototype.resizable = function() {
     });
 }
 
+
+/* Event queue prototype */
+function EventQueue() {
+    this._queue = [];
+    this.maxlen = 100;
+}
+EventQueue.prototype.clear = function() {
+    this._queue = [];
+}
+EventQueue.prototype.append = function(e) {
+    this._queue.push(e);
+    // Remove the oldest element if the queue is longer than the maximum allowed side.
+    if (this._queue.length > this.maxlen) {
+        this._queue.shift();
+    }
+}
+EventQueue.prototype.get = function() {
+    return this._queue;
+}
+Object.defineProperty(EventQueue.prototype, "length", {
+    get: function() { return this._queue.length; },
+    // set: function(y) { this.setFullYear(y) }
+});
+
+
 /* Canvas initialization */
 function init_app(c) {
 
@@ -204,6 +229,8 @@ function init_app(c) {
             c.resize([e.width(), e.height()]);
         }
     );
+
+    c.event_queue = new EventQueue();
 
     // This object stores some state necessary to generate the appropriate
     // events.
@@ -232,6 +259,7 @@ function init_app(c) {
         
         // Save the last event.
         c._eventinfo.last_event = event;
+        c.event_queue.append(event);
     });
     c.$el.mousedown(function(e) {
         ++c._eventinfo.is_button_pressed;
@@ -244,6 +272,7 @@ function init_app(c) {
         c._eventinfo.press_event = event;
         // Save the last event.
         c._eventinfo.last_event = event;
+        c.event_queue.append(event);
     });
     c.$el.mouseup(function(e) {
         --c._eventinfo.is_button_pressed;
@@ -256,9 +285,10 @@ function init_app(c) {
         c._eventinfo.press_event = null;
         // Save the last event.
         c._eventinfo.last_event = event;
+        c.event_queue.append(event);
     });
     c.$el.click(function(e) {
-    
+        console.log(c.event_queue.length);
         // Reset the last press event.
         c._eventinfo.press_event = null;
     });
@@ -276,6 +306,7 @@ function init_app(c) {
         
         // Save the last event.
         c._eventinfo.last_event = event;
+        c.event_queue.append(event);
     });
     
     // HACK: this is to extend the mouse events outside the canvas
@@ -291,6 +322,7 @@ function init_app(c) {
         
         // Save the last event.
         c._eventinfo.last_event = event;
+        c.event_queue.append(event);
     });
     c.$el.keyup(function(e) {
         var event = gen_key_event(c, e, 'key_release');
@@ -300,6 +332,7 @@ function init_app(c) {
         
         // Save the last event.
         c._eventinfo.last_event = event;
+        c.event_queue.append(event);
     });
     c.$el.keydown(function(e) {
         //c._eventinfo.modifiers = get_modifiers(e);
