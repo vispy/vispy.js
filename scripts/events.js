@@ -274,7 +274,7 @@ Object.defineProperty(EventQueue.prototype, "length", {
 
 
 /* Event loop */
-VispyCanvas.prototype.start_event_loop = function() {
+VispyCanvas.prototype.start_event_loop = function(callback) {
     // Start the event loop using requestAnimationFrame (unless deferred mode
     // is disabled).
     if (!this._deferred) {
@@ -285,15 +285,20 @@ VispyCanvas.prototype.start_event_loop = function() {
           return  window.requestAnimationFrame       ||
                   window.webkitRequestAnimationFrame ||
                   window.mozRequestAnimationFrame    ||
-                  function( callback ){
-                    window.setTimeout(callback, 1000. / 60.);
+                  function(c){
+                    window.setTimeout(c, 1000. / 60.);
                   };
     })();
 
+    // "that" is the current VispyCanvas instance.
     var that = this;
-    (function animloop(){
-      requestAnimFrame(animloop);
-      that.execute_pending_commands();
+    (function animloop() {
+        requestAnimFrame(animloop);
+        that.execute_pending_commands();
+        // User-specified callback function to be called at every frame.
+        if (callback != undefined) {
+            callback();
+        }
     })();
 }
 
