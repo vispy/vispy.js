@@ -199,14 +199,50 @@ Object.defineProperty(GlirQueue.prototype, "length", {
 
 
 
+/* Vispy canvas GLIR methods */
+VispyCanvas.prototype.set_deferred = function(deferred) {
+    this._deferred = deferred;
+}
+
+VispyCanvas.prototype.execute_pending_commands = function() {
+    var q = this.glir_queue.get();
+    if (q.length == 0) {
+        return;
+    }
+    for (var i = 0; i < q.length; i++) {
+        this.call(q[i], false);
+    }
+    debug("Processed {0} events.".format(q.length));
+    this.glir_queue.clear();
+};
+
+VispyCanvas.prototype.start_event_loop = function() {
+    // Start the event loop using requestAnimationFrame (unless deferred mode
+    // is disabled).
+    if (!this._deferred) {
+        console.warn("start_event_loop() has no effect when deferred mode is disabled.");
+        return false;
+    }
+    window.requestAnimFrame = (function(){
+          return  window.requestAnimationFrame       ||
+                  window.webkitRequestAnimationFrame ||
+                  window.mozRequestAnimationFrame    ||
+                  function( callback ){
+                    window.setTimeout(callback, 1000. / 60.);
+                  };
+    })();
+
+    var that = this;
+    (function animloop(){
+      requestAnimFrame(animloop);
+      that.execute_pending_commands();
+    })();
+}
+
 /* Creation of vispy.gloo.glir */
 define(function() {
     var glir = function() {
         var that = this;
-
-        VispyCanvas.prototype.set_deferred = function(deferred) {
-            this._deferred = deferred;
-        }
 
         VispyCanvas.prototype.call = function(command, deferred) { 
             if (deferred == undefined) {
@@ -221,41 +257,6 @@ define(function() {
             }
 
         };
-
-        VispyCanvas.prototype.execute_pending_commands = function() {
-            var q = this.glir_queue.get();
-            if (q.length == 0) {
-                return;
-            }
-            for (var i = 0; i < q.length; i++) {
-                this.call(q[i], false);
-            }
-            debug("Processed {0} events.".format(q.length));
-            this.glir_queue.clear();
-        };
-
-        VispyCanvas.prototype.start_event_loop = function() {
-            // Start the event loop using requestAnimationFrame (unless deferred mode
-            // is disabled).
-            if (!this._deferred) {
-                console.warn("start_event_loop() has no effect when deferred mode is disabled.");
-                return false;
-            }
-            window.requestAnimFrame = (function(){
-                  return  window.requestAnimationFrame       ||
-                          window.webkitRequestAnimationFrame ||
-                          window.mozRequestAnimationFrame    ||
-                          function( callback ){
-                            window.setTimeout(callback, 1000. / 60.);
-                          };
-            })();
-
-            var that = this;
-            (function animloop(){
-              requestAnimFrame(animloop);
-              that.execute_pending_commands();
-            })();
-        }
     };
 
     glir.prototype.init = function(c) {
