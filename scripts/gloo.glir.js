@@ -187,8 +187,13 @@ function GlirQueue() {
 GlirQueue.prototype.clear = function() {
     this._queue = [];
 }
-GlirQueue.prototype.append = function(e, compress) {
+GlirQueue.prototype.append = function(e) {
     this._queue.push(e);
+}
+GlirQueue.prototype.append_multi = function(es) {
+    for (var i = 0; i < es.length; i++) {
+        this._queue.push(es[i]);
+    }
 }
 GlirQueue.prototype.get = function() {
     return this._queue;
@@ -215,29 +220,6 @@ VispyCanvas.prototype.execute_pending_commands = function() {
     debug("Processed {0} events.".format(q.length));
     this.glir_queue.clear();
 };
-
-VispyCanvas.prototype.start_event_loop = function() {
-    // Start the event loop using requestAnimationFrame (unless deferred mode
-    // is disabled).
-    if (!this._deferred) {
-        console.warn("start_event_loop() has no effect when deferred mode is disabled.");
-        return false;
-    }
-    window.requestAnimFrame = (function(){
-          return  window.requestAnimationFrame       ||
-                  window.webkitRequestAnimationFrame ||
-                  window.mozRequestAnimationFrame    ||
-                  function( callback ){
-                    window.setTimeout(callback, 1000. / 60.);
-                  };
-    })();
-
-    var that = this;
-    (function animloop(){
-      requestAnimFrame(animloop);
-      that.execute_pending_commands();
-    })();
-}
 
 /* Creation of vispy.gloo.glir */
 define(function() {
