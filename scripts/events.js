@@ -270,7 +270,6 @@ EventQueue.prototype.get = function() {
 }
 Object.defineProperty(EventQueue.prototype, "length", {
     get: function() { return this._queue.length; },
-    // set: function(y) { this.setFullYear(y) }
 });
 
 

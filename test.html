@@ -15,7 +15,12 @@ Vispy.js requires jQuery, jQueryUI, jQuery mousewheel plugin.
 
 <script>
 require(["vispy"], function(vispy) {
+
+    // VISPY_DEBUG enables debug logging and disables the GLIR deferred mode.
+    VISPY_DEBUG = false;
+
     c = vispy.init("#mycanvas");
+    // c.set_deferred(true);  // Deferred mode is the default.
 
     // Shaders.
     var VS = " \
@@ -122,7 +127,6 @@ require(["vispy"], function(vispy) {
         this.update();
     });
 
-    VISPY_DEBUG = false;
     c.initialize();
     c.resize();  // resize triggers an paint event.
 
@@ -140,6 +144,9 @@ require(["vispy"], function(vispy) {
             c.toggle_fullscreen();
         }
     });
+
+    // Start the event loop using requestanimationframe() (HTML5 spec).
+    c.start_event_loop();
 
 });
 </script>
