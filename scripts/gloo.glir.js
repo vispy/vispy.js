@@ -230,7 +230,7 @@ define(function() {
             for (var i = 0; i < q.length; i++) {
                 this.call(q[i], false);
             }
-            console.debug("Processed {0} events.".format(q.length));
+            debug("Processed {0} events.".format(q.length));
             this.glir_queue.clear();
         };
 
