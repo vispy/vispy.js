@@ -273,6 +273,31 @@ Object.defineProperty(EventQueue.prototype, "length", {
 });
 
 
+/* Event loop */
+VispyCanvas.prototype.start_event_loop = function() {
+    // Start the event loop using requestAnimationFrame (unless deferred mode
+    // is disabled).
+    if (!this._deferred) {
+        console.warn("start_event_loop() has no effect when deferred mode is disabled.");
+        return false;
+    }
+    window.requestAnimFrame = (function(){
+          return  window.requestAnimationFrame       ||
+                  window.webkitRequestAnimationFrame ||
+                  window.mozRequestAnimationFrame    ||
+                  function( callback ){
+                    window.setTimeout(callback, 1000. / 60.);
+                  };
+    })();
+
+    var that = this;
+    (function animloop(){
+      requestAnimFrame(animloop);
+      that.execute_pending_commands();
+    })();
+}
+
+
 /* Canvas initialization */
 function init_app(c) {
 
