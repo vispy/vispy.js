@@ -199,6 +199,25 @@ VispyCanvas.prototype.resizable = function() {
 
 
 /* Event queue prototype */
+function _events_can_be_combined(e1, e2) {
+    // Return the list of properties to copy to e2.
+    // The returned list is non empty if the two events can be combined.
+    // It is empty if the two events cannot be combined.
+    var type = e1.type;
+    if (type == e2.type) {
+        if (type == 'mouse_move') {
+            if ((e1.button == e2.button) &
+                (e1.is_dragging == e2.is_dragging) &
+                (e1.modifiers.equals(e2.modifiers))) {
+                return ['pos'];
+            }
+        }
+        else {
+
+        }
+    }
+    return [];
+}
 function EventQueue(maxlen) {
     if (maxlen == undefined) {
         maxlen = 100;
@@ -210,35 +229,35 @@ EventQueue.prototype.clear = function() {
     this._queue = [];
 }
 EventQueue.prototype.append = function(e, compress) {
+    // Compression allows several similar consecutive events to be merged
+    // into a single event, for performance reasons (notably, 'mouse_move').
+    var add_to_queue = true;
     if (compress == undefined) {
         compress = true;
     }
     if (compress) {
         // If the event type is identical to the last event, we
         // just update the parameters instead of pushing a new event.
-        var last_event = this._queue.slice(-1);
-        // TODO: refactor this
-        if (last_event.type == event.type) {
-            if (event.type == 'mouse_move') {
-                // buttons, is_dragging, modifiers
-                if ((event.buttons == last_event.buttons) &
-                    (event.is_dragging == last_event.is_dragging) &
-                    (event.modifiers == last_event.modifiers)) {
-                    last_event.pos = event.pos;
+        var last_event = this._queue[this._queue.length - 1];
+        if (last_event != undefined) {
+            // Get the list or properties to combine.
+            var props = _events_can_be_combined(e, last_event);
+            // Combine the properties.
+            if (props.length > 0) {
+                for (var i = 0; i < props.length; i++) {
+                    var prop = props[i];
+                    this._queue[this._queue.length - 1][prop] = e[prop];
                 }
-                else {
-                    this._queue.push(e);
-                }
-            }
-            else {
-                // TODO: other event types
+                // In this case, no need to add the new event to the queue
+                // because the last existing event can be updated ("combined"
+                // with the new one).
+                add_to_queue = false;
             }
         }
     }
-    else {
+    if (add_to_queue) {
         this._queue.push(e);
     }
-    console.log(this._queue.length);
     // Remove the oldest element if the queue is longer than the maximum allowed side.
     if (this._queue.length > this.maxlen) {
         this._queue.shift();
@@ -246,7 +265,6 @@ EventQueue.prototype.append = function(e, compress) {
         this._queue[0].last_event = null;
     }
 }
-// TODO: compress the queue with events of the same type
 EventQueue.prototype.get = function() {
     return this._queue;
 }
