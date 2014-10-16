@@ -377,17 +377,20 @@ function init_app(c) {
         // Reset the last press event.
         c._eventinfo.press_event = null;
     });
-    c.$el.mousewheel(function(e) {
-        var event = gen_mouse_event(c, e, 'mouse_wheel');
-        event.delta = [e.wheelDeltaX / 100., e.wheelDeltaY / 100.];
-        
-        // Vispy callbacks.
-        c._mouse_wheel(event);
-        
-        // Save the last event.
-        // c._eventinfo.last_event = event;
-        c.event_queue.append(event);
-    });
+    // This requires the mouse wheel jquery plugin.
+    if (c.$el.mousewheel != undefined) {
+        c.$el.mousewheel(function(e) {
+            var event = gen_mouse_event(c, e, 'mouse_wheel');
+            event.delta = [e.wheelDeltaX / 100., e.wheelDeltaY / 100.];
+            
+            // Vispy callbacks.
+            c._mouse_wheel(event);
+            
+            // Save the last event.
+            // c._eventinfo.last_event = event;
+            c.event_queue.append(event);
+        });
+    }
     
     // HACK: this is to extend the mouse events outside the canvas
     // document.onmousemove = c.onmousemove;
