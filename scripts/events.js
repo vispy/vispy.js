@@ -293,14 +293,18 @@ VispyCanvas.prototype.start_event_loop = function(callback) {
     // "that" is the current VispyCanvas instance.
     var that = this;
     (function animloop() {
-        requestAnimFrame(animloop);
+        that._request_id = requestAnimFrame(animloop);
         that.execute_pending_commands();
         // User-specified callback function to be called at every frame.
         if (callback != undefined) {
             callback();
         }
     })();
-}
+};
+
+VispyCanvas.prototype.stop_event_loop = function() {
+    window.cancelAnimationFrame(this._request_id);
+};
 
 
 /* Canvas initialization */
