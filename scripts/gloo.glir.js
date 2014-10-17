@@ -215,31 +215,29 @@ VispyCanvas.prototype.execute_pending_commands = function() {
         return;
     }
     for (var i = 0; i < q.length; i++) {
-        this.call(q[i], false);
+        this.command(q[i], false);
     }
     debug("Processed {0} events.".format(q.length));
     this.glir_queue.clear();
 };
 
+VispyCanvas.prototype.command = function(command, deferred) { 
+    if (deferred == undefined) {
+        deferred = this._deferred;
+    }
+    var method = command[0].toLowerCase();
+    if (deferred) {
+        this.glir_queue.append(command);
+    }
+    else {
+        this.glir[method](this, command.slice(1));
+    }
+};
+
+
 /* Creation of vispy.gloo.glir */
 define(function() {
-    var glir = function() {
-        var that = this;
-
-        VispyCanvas.prototype.call = function(command, deferred) { 
-            if (deferred == undefined) {
-                deferred = this._deferred;
-            }
-            var method = command[0].toLowerCase();
-            if (deferred) {
-                this.glir_queue.append(command);
-            }
-            else {
-                that[method](this, command.slice(1));
-            }
-
-        };
-    };
+    var glir = function() { };
 
     glir.prototype.init = function(c) {
         // Namespace with the table of all symbols used by GLIR.
@@ -258,6 +256,7 @@ define(function() {
         // Deferred mode is enabled by default, unless DEBUG is true.
         c._deferred = !VISPY_DEBUG;
         c.glir_queue = new GlirQueue();
+        c.glir = this;
     }
 
     glir.prototype.create = function(c, args) {

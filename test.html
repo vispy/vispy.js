@@ -44,66 +44,66 @@ require(["vispy"], function(vispy) {
 
     // Initialize the scene.
     c.on_initialize(function (event) {
-        this.call(['CREATE', 'myvbo', 'VertexBuffer']);
-        this.call(['SIZE', 'myvbo', 8*4]);
-        this.call(['DATA', 'myvbo', 0, new Float32Array(
+        this.command(['CREATE', 'myvbo', 'VertexBuffer']);
+        this.command(['SIZE', 'myvbo', 8*4]);
+        this.command(['DATA', 'myvbo', 0, new Float32Array(
             [-0.5, -0.5, 
               0.5, -0.5, 
              -0.5,  0.5,
               0.5,  0.5,
              ])]);
 
-        this.call(['CREATE', 'mytexcoords', 'VertexBuffer']);
-        this.call(['DATA', 'mytexcoords', 0, new Float32Array(
+        this.command(['CREATE', 'mytexcoords', 'VertexBuffer']);
+        this.command(['DATA', 'mytexcoords', 0, new Float32Array(
             [0., 0.,
              2., 0.,
              0., 2.,
              2., 2.,
              ])]);
         
-        this.call(['CREATE', 'myib', 'IndexBuffer']);
-        this.call(['DATA', 'myib', 0, new Uint16Array(
+        this.command(['CREATE', 'myib', 'IndexBuffer']);
+        this.command(['DATA', 'myib', 0, new Uint16Array(
             [0,1,2,3,2,1
              ])]);
 
-        this.call(['CREATE', 'mytex', 'Texture2D']);
-        this.call(['SIZE', 'mytex', [2, 2], 'RGBA']);
-        this.call(['DATA', 'mytex', [0, 0], new Uint8Array(
+        this.command(['CREATE', 'mytex', 'Texture2D']);
+        this.command(['SIZE', 'mytex', [2, 2], 'RGBA']);
+        this.command(['DATA', 'mytex', [0, 0], new Uint8Array(
             [100,100,100,255,
              255,255,255,255,
              255,255,255,255,
              100,100,100,255]
              )]);
 
-        this.call(['CREATE', 'myprogram', 'Program']);
-        this.call(['SHADERS', 'myprogram', VS, FS]);
-        this.call(['ATTRIBUTE', 'myprogram', 'a_position',
+        this.command(['CREATE', 'myprogram', 'Program']);
+        this.command(['SHADERS', 'myprogram', VS, FS]);
+        this.command(['ATTRIBUTE', 'myprogram', 'a_position',
                                  'vec2', 'myvbo', 0, 0]);
-        this.call(['ATTRIBUTE', 'myprogram', 'a_texcoords',
+        this.command(['ATTRIBUTE', 'myprogram', 'a_texcoords',
                                  'vec2', 'mytexcoords', 0, 0]);
-        this.call(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
+        this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
             new Float32Array([1., 1., 1.])]);
         
-        this.call(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
-        this.call(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
-        this.call(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
+        this.command(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
+        this.command(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
+        this.command(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
 
         // Enable transparency.
-        this.call(['FUNC', 'blendFunc', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA']);
-        this.call(['FUNC', 'enable', 'BLEND']);
+        this.command(['FUNC', 'blendFunc', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA']);
+        this.command(['FUNC', 'enable', 'BLEND']);
     });
 
     // Update the viewport upon resize.
     c.on_resize(function(event) {
-        this.call(['FUNC', 'viewport', 0, 0, event.size[0], event.size[1]]);
+        this.command(['FUNC', 'viewport', 0, 0, event.size[0], event.size[1]]);
         this.update();
     });
 
     // Draw the scene.
     c.on_paint(function(event) {
-        this.call(['FUNC', 'clearColor', 0, 0, 0, 1]);
-        this.call(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
-        this.call(['DRAW', 'myprogram', 'TRIANGLES',
+        this.command(['FUNC', 'clearColor', 0, 0, 0, 1]);
+        this.command(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
+        this.command(['DRAW', 'myprogram', 'TRIANGLES',
                                  ['myib', 'UNSIGNED_SHORT', 6]]);
     });
 
@@ -115,12 +115,12 @@ require(["vispy"], function(vispy) {
         
         // Update a data point when dragging.
         if (event.is_dragging) {
-            this.call(['DATA', 'myvbo', 2*4,  // 2 float32 elements
+            this.command(['DATA', 'myvbo', 2*4,  // 2 float32 elements
                 new Float32Array([2*u-1, 1-2*v])]);
         }
 
         // Update the color.
-        this.call(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
+        this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
             new Float32Array([u, v, 1.])]);
         
         // Refresh the window.
