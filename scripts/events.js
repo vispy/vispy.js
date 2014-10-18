@@ -348,7 +348,7 @@ function init_app(c) {
     });
     c.$el.mousedown(function(e) {
         ++c._eventinfo.is_button_pressed;
-        var event = gen_mouse_event(c, e, 'mouse_release');
+        var event = gen_mouse_event(c, e, 'mouse_press');
         
         // Vispy callbacks.
         c._mouse_press(event);
@@ -361,7 +361,7 @@ function init_app(c) {
     });
     c.$el.mouseup(function(e) {
         --c._eventinfo.is_button_pressed;
-        var event = gen_mouse_event(c, e, 'mouse_press');
+        var event = gen_mouse_event(c, e, 'mouse_release');
         
         // Vispy callbacks.
         c._mouse_release(event);
