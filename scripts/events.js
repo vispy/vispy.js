@@ -35,9 +35,14 @@ function get_key(e){
 
 
 /* Event generation */
+var _button_map = {
+    0: 1,   // left
+    2: 2,   // right
+    1: 3,   // middle
+};
 function gen_mouse_event(c, e, type) {
     if (c._eventinfo.is_button_pressed)
-        var button = e.button;
+        var button = _button_map[e.button];
     else
         button = null;
     var pos = get_pos(c.$el.get(0), e);
@@ -59,11 +64,9 @@ function gen_mouse_event(c, e, type) {
 }
 
 function gen_resize_event(c, size) {
-    // var canvas = c.$el.get(0);
-    // console.log(c);
     var event = {
         'type': 'resize',
-        'size': size,//[c.clientWidth, c.clientHeight]
+        'size': size,
     }
     return event;
 }
