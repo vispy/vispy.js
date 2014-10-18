@@ -253,8 +253,8 @@ define(function() {
         // * attributes (for Programs)
         // * uniforms (for Programs)
         c._ns = {};
-        // Deferred mode is enabled by default, unless DEBUG is true.
-        c._deferred = !VISPY_DEBUG;
+        // Deferred mode is enabled by default.
+        c._deferred = true;
         c.glir_queue = new GlirQueue();
         c.glir = this;
     }
