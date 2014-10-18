@@ -297,7 +297,13 @@ VispyCanvas.prototype.start_event_loop = function(callback) {
     var that = this;
     (function animloop() {
         that._request_id = requestAnimFrame(animloop);
-        that.execute_pending_commands();
+        try {
+            that.execute_pending_commands();
+        }
+        catch(err) {
+            console.warn(err);
+            that.stop_event_loop();
+        }
         // User-specified callback function to be called at every frame.
         if (callback != undefined) {
             callback();
