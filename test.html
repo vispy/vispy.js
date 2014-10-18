@@ -46,12 +46,17 @@ require(["vispy"], function(vispy) {
     c.on_initialize(function (event) {
         this.command(['CREATE', 'myvbo', 'VertexBuffer']);
         this.command(['SIZE', 'myvbo', 8*4]);
-        this.command(['DATA', 'myvbo', 0, new Float32Array(
-            [-0.5, -0.5, 
-              0.5, -0.5, 
-             -0.5,  0.5,
-              0.5,  0.5,
-             ])]);
+
+        // Two different ways of specifying the data.
+        // data = new Float32Array([-0.5, -0.5, 
+        //                           0.5, -0.5, 
+        //                          -0.5,  0.5,
+        //                           0.5,  0.5,])
+        data = {
+            'storage_type': 'base64',
+            'buffer': 'AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8=',
+        };
+        this.command(['DATA', 'myvbo', 0, data]);
 
         this.command(['CREATE', 'mytexcoords', 'VertexBuffer']);
         this.command(['DATA', 'mytexcoords', 0, new Float32Array(

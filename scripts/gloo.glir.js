@@ -96,7 +96,7 @@ function set_buffer_data(c, object_handle, gl_type, offset, array, reuse) {
 
 function set_uniform(c, uniform_handle, uniform_function, value) {
     // Get a TypedArray.
-    array = to_typed_array(value);
+    array = to_array_buffer(value);
 
     if (uniform_function.indexOf('Matrix') > 0) {
         // Matrix uniforms.
@@ -374,14 +374,13 @@ define(function() {
         var object_id = args[0];
         var offset = args[1];
         var data = args[2];
-        var size = data.length;
         var object = c._ns[object_id];
         var object_type = object.object_type; // VertexBuffer, IndexBuffer, or Texture2D
         var object_handle = object.handle;
         var gl_type = c.gl[get_gl_type(object_type)];
 
         // Get a TypedArray.
-        var array = to_typed_array(data);
+        var array = to_array_buffer(data);
 
         // Textures.
         if (object_type.indexOf('Texture') >= 0) {
@@ -404,7 +403,7 @@ define(function() {
             debug("Setting buffer data for '{0}'.".format(object_id));
             // Reuse the buffer if the existing size is not null.
             set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0);
-            object.size = size;
+            object.size = array.byteLength;
         }
     }
 

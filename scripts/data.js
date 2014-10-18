@@ -1,5 +1,13 @@
-// TODO: how to handle heterogeneous data types, structured arrays.
-// Probably with DataViews.
+function decode_base64(base64) {
+    var binary_string =  window.atob(base64);
+    var len = binary_string.length;
+    var bytes = new Uint8Array( len );
+    for (var i = 0; i < len; i++)        {
+        var ascii = binary_string.charCodeAt(i);
+        bytes[i] = ascii;
+    }
+    return bytes.buffer;
+}
 
 // Mapping between user-friendly data type string, and typed array classes.
 var _typed_array_map = {
@@ -13,7 +21,7 @@ var _typed_array_map = {
 };
 
 
-function to_typed_array(data) {
+function to_array_buffer(data) {
 
     // Return a TypedArray from a JSON object describing a data buffer.
     // storage_type is one of 'javascript_array', 'javascript_typed_array', 
@@ -33,11 +41,12 @@ function to_typed_array(data) {
         // A regular JavaScript array, the type must be specified in 'data_type'.
         return _typed_array_map[data_type](contents);
     }
-    else if (storage_type == "javascript_typed_array") {
+    else if (storage_type == "javascript_typed_array" || storage_type == "array_buffer") {
         // A JavaScript Typedarray.
         return contents;
     }
     if (storage_type == "base64") {
-        // TODO: base64-encoded buffer. Need to decode and convert to a typed array
+        var array = decode_base64(contents);
+        return array;
     }
 }
