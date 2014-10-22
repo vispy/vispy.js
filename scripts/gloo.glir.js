@@ -9,7 +9,7 @@ function clear(c, color) {
 }
 
 function compile_shader(c, type, source) {
-    source = "precision mediump float;\n" + source;
+    //source = "precision mediump float;\n" + source;
     source = source.replace(/\\n/g, "\n")
     
     var shader = c.gl.createShader(c.gl[type]);
@@ -411,9 +411,10 @@ define(function() {
         var program_id = args[0];
         var name = args[1];
         var type = args[2];
-        var vbo_id = args[3];
-        var stride = args[4];
-        var offset = args[5];
+        // TODO: support non-VBO data
+        var vbo_id = args[3][0];
+        var stride = args[3][1];
+        var offset = args[3][2];
 
         var program_handle = c._ns[program_id].handle;
 

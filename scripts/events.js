@@ -301,8 +301,8 @@ VispyCanvas.prototype.start_event_loop = function(callback) {
             that.execute_pending_commands();
         }
         catch(err) {
-            console.warn(err);
             that.stop_event_loop();
+            throw (err);
         }
         // User-specified callback function to be called at every frame.
         if (callback != undefined) {
