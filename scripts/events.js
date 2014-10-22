@@ -174,6 +174,8 @@ VispyCanvas.prototype.resize = function(size) {
     var event = gen_resize_event(this, size);
     this.gl.canvas.width = size[0];
     this.gl.canvas.height = size[1];
+    // Put the resize event in the queue.
+    this.event_queue.append(event);
     this._resize(event);
 };
 
@@ -319,6 +321,8 @@ VispyCanvas.prototype.stop_event_loop = function() {
 /* Canvas initialization */
 function init_app(c) {
 
+    // Generate a resize event when the user resizes the canvas with
+    // jQuery resizable.
     c.$el.resize(function(e) {
             c.resize([e.width(), e.height()]);
         }

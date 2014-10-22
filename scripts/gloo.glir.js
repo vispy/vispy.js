@@ -215,6 +215,7 @@ VispyCanvas.prototype.execute_pending_commands = function() {
         return;
     }
     for (var i = 0; i < q.length; i++) {
+        // console.debug(i, q[i]);
         this.command(q[i], false);
     }
     debug("Processed {0} events.".format(q.length));
