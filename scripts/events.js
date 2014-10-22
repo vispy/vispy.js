@@ -190,6 +190,7 @@ VispyCanvas.prototype.toggle_fullscreen = function() {
             this.resize(this._size);
         }
         else {
+            this.$el.width("100%").height("100%");
             this._size = [this.$el.width(), this.$el.height()];
             screenfull.request(this.$el[0]);
             this.resize([screen.width, screen.height]);
