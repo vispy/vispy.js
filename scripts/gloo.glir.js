@@ -519,7 +519,7 @@ define(function() {
 
     glir.prototype.draw = function(c, args) {
         var program_id = args[0];
-        var mode = args[1];
+        var mode = args[1].toUpperCase();
         var selection = args[2];
 
         var program_handle = c._ns[program_id].handle;
