@@ -179,6 +179,10 @@ VispyCanvas.prototype.resize = function(size) {
     this._resize(event);
 };
 
+VispyCanvas.prototype.event_tick = function() {
+    this.execute_pending_commands();
+};
+
 VispyCanvas.prototype.toggle_fullscreen = function() {
     if (screenfull.enabled) {
         if(screenfull.isFullscreen) {
@@ -191,7 +195,7 @@ VispyCanvas.prototype.toggle_fullscreen = function() {
             this.resize([screen.width, screen.height]);
         }
     }
-}
+};
 
 VispyCanvas.prototype.resizable = function() {
     var that = this;
@@ -200,7 +204,7 @@ VispyCanvas.prototype.resizable = function() {
             that.resize([ui.size.width, ui.size.height]);
         }
     });
-}
+};
 
 
 /* Event queue prototype */
@@ -276,46 +280,6 @@ EventQueue.prototype.get = function() {
 Object.defineProperty(EventQueue.prototype, "length", {
     get: function() { return this._queue.length; },
 });
-
-
-/* Event loop */
-VispyCanvas.prototype.start_event_loop = function(callback) {
-    // Start the event loop using requestAnimationFrame (unless deferred mode
-    // is disabled).
-    if (!this._deferred) {
-        console.warn("start_event_loop() has no effect when deferred mode is disabled.");
-        return false;
-    }
-    window.requestAnimFrame = (function(){
-          return  window.requestAnimationFrame       ||
-                  window.webkitRequestAnimationFrame ||
-                  window.mozRequestAnimationFrame    ||
-                  function(c){
-                    window.setTimeout(c, 1000. / 60.);
-                  };
-    })();
-
-    // "that" is the current VispyCanvas instance.
-    var that = this;
-    (function animloop() {
-        that._request_id = requestAnimFrame(animloop);
-        try {
-            that.execute_pending_commands();
-        }
-        catch(err) {
-            that.stop_event_loop();
-            throw (err);
-        }
-        // User-specified callback function to be called at every frame.
-        if (callback != undefined) {
-            callback();
-        }
-    })();
-};
-
-VispyCanvas.prototype.stop_event_loop = function() {
-    window.cancelAnimationFrame(this._request_id);
-};
 
 
 /* Canvas initialization */

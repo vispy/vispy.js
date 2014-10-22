@@ -161,12 +161,12 @@ require(["vispy"], function(vispy) {
     });
 
     // Start the event loop using requestanimationframe() (HTML5 spec).
-    c.start_event_loop();
+    vispy.start_event_loop();
 
 });
 </script>
 <style>
-body, #mycanvas {
+#mycanvas {
     /*width: 100%;*/
     /*height: 100%;*/
     width: 800px;
@@ -179,5 +179,6 @@ body, #mycanvas {
 </head> 
 <body>
 <canvas id="mycanvas"></canvas>
+<canvas id="mycanvas2"></canvas>
 </body>
 </html>

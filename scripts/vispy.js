@@ -20,6 +20,9 @@ define(["events", "gloo", "util", "data"],
             // Constructor of the Vispy library.
             this.events = events;
             this.gloo = gloo;
+
+            // List of canvases on the page.
+            this._canvases = [];
         };
 
         vispy.prototype.init = function(canvas_id) {
@@ -39,7 +42,46 @@ define(["events", "gloo", "util", "data"],
             // Initialize WebGL.
             this.gloo.init(canvas);
 
+            // Register the canvas.
+            this._canvases.push(canvas);
+
             return canvas;
         };
+
+
+
+        /* Event loop */
+        vispy.prototype.start_event_loop = function() {
+            window.requestAnimFrame = (function(){
+                  return  window.requestAnimationFrame       ||
+                          window.webkitRequestAnimationFrame ||
+                          window.mozRequestAnimationFrame    ||
+                          function(c){
+                            window.setTimeout(c, 1000. / 60.);
+                          };
+            })();
+
+            // "that" is the current vispy instance.
+            var that = this;
+            (function animloop() {
+                that._request_id = requestAnimFrame(animloop);
+                try {
+                    // Call event_tick() on all active canvases.
+                    for (var i = 0; i < that._canvases.length; i++) {
+                        that._canvases[i].event_tick();
+                    }
+                }
+                catch(err) {
+                    that.stop_event_loop();
+                    throw (err);
+                }
+            })();
+        };
+
+        vispy.prototype.stop_event_loop = function() {
+            window.cancelAnimationFrame(this._request_id);
+        };
+
+
         return new vispy();
 });
