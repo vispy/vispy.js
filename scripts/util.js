@@ -39,6 +39,12 @@ Array.prototype.equals = function (array) {
     return true;
 }
 
+if (typeof String.prototype.startsWith != 'function') {
+  String.prototype.startsWith = function (str){
+    return this.slice(0, str.length) == str;
+  };
+}
+
 var VISPY_DEBUG = false;
 function debug(msg) {
     if (VISPY_DEBUG){

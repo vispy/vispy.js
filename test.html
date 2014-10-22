@@ -36,11 +36,13 @@ require(["vispy"], function(vispy) {
     var FS = "\
     precision mediump float; \
     uniform vec3 u_color; \
+    uniform mat4 u_mat; \
     uniform sampler2D u_sampler; \
     varying vec2 v_position; \
     void main() { \
         vec4 color = texture2D(u_sampler, v_position); \
         color.rgb = color.rgb * u_color; \
+        color.b = u_mat[1][3]; \
         gl_FragColor = color; \
     }";
 
@@ -90,6 +92,12 @@ require(["vispy"], function(vispy) {
                                  'vec2', ['mytexcoords', 0, 0]]);
         this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
             new Float32Array([1., 1., 1.])]);
+        this.command(['UNIFORM', 'myprogram', 'u_mat', 'mat4', 
+            new Float32Array([
+                0,0,0,0,
+                0,0,0,1,
+                0,0,0,0,
+                0,0,0,0])]);
         
         this.command(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
         this.command(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);

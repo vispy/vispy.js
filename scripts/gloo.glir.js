@@ -108,53 +108,40 @@ function set_uniform(c, uniform_handle, uniform_function, value) {
     }
 }
 
+var _attribute_type_map = {
+    'float': ['FLOAT', 1],
+    'vec2': ['FLOAT', 2],
+    'vec3': ['FLOAT', 3],
+    'vec4': ['FLOAT', 4],
+
+    'int': ['INT', 1],
+    'ivec2': ['INT', 2],
+    'ivec3': ['INT', 3],
+    'ivec4': ['INT', 4],
+};
 function get_attribute_info(type) {
     // type: vec2, ivec3, float, etc.
-    
-    // Find OpenGL attribute type.
-    var gl_type = 'FLOAT';
-    if (type[0] == 'i' || type == 'int') {
-        gl_type = 'INT';
-    }
-    
-    // Find ndim.
-    var ndim;
-    if (type == 'int' || type == 'float') {
-        ndim = 1;
-    }
-    else {
-        ndim = parseInt(type.slice(-1));
-    }
-
-    return [gl_type, ndim];
+    return _attribute_type_map[type];
 }
 
+var _uniform_type_map = {
+    'float': 'uniform1fv',
+    'vec2': 'uniform2fv',
+    'vec3': 'uniform3fv',
+    'vec4': 'uniform4fv',
+
+    'int': 'uniform1iv',
+    'ivec2': 'uniform2iv',
+    'ivec3': 'uniform3iv',
+    'ivec4': 'uniform4iv',
+
+    'mat2': 'uniformMatrix2fv',
+    'mat3': 'uniformMatrix3fv',
+    'mat4': 'uniformMatrix4fv',
+};
 function get_uniform_function(type) {
-    // Samplers are always uniform1i.
-    // if (type.indexOf('sampler') >= 0) {
-    //     return 'uniform1i';
-    // }
-
-    // Find OpenGL attribute type.
-    var type_char;
-    var ndim;
-    if (type[0] == 'i' || type == 'int') {
-        type_char = 'i';
-    }
-    else {
-        type_char = 'f';
-    }
-    
-    // Find ndim.
-    var ndim;
-    if (type == 'int' || type == 'float') {
-        ndim = 1;
-    }
-    else {
-        ndim = parseInt(type.slice(-1));
-    }
-
-    return 'uniform{0}{1}v'.format(ndim, type_char);
+    // Find OpenGL uniform function.
+    return _uniform_type_map[type];
 }
 
 var _gl_type_map = {
@@ -215,7 +202,7 @@ VispyCanvas.prototype.execute_pending_commands = function() {
         return;
     }
     for (var i = 0; i < q.length; i++) {
-        // console.debug(i, q[i]);
+        // console.debug(q[i]);
         this.command(q[i], false);
     }
     debug("Processed {0} events.".format(q.length));
