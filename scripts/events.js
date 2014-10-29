@@ -367,7 +367,8 @@ function init_app(c) {
     if (c.$el.mousewheel != undefined) {
         c.$el.mousewheel(function(e) {
             var event = gen_mouse_event(c, e, 'mouse_wheel');
-            event.delta = [e.wheelDeltaX / 100., e.wheelDeltaY / 100.];
+            event.delta = [e.deltaX * e.deltaFactor * .01,
+                           e.deltaY * e.deltaFactor * .01];
 
             // Vispy callbacks.
             c._mouse_wheel(event);
@@ -375,6 +376,9 @@ function init_app(c) {
             // Save the last event.
             // c._eventinfo.last_event = event;
             c.event_queue.append(event);
+
+            e.preventDefault();
+            e.stopPropagation();
         });
     }
 
