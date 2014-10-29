@@ -14,7 +14,7 @@ function VispyCanvas($el) {
 }
 
 // Vispy library entry point.
-define(["events", "gloo", "util", "data"], 
+define(["events", "gloo", "util", "data"],
     function(events, gloo) {
         var vispy = function() {
             // Constructor of the Vispy library.
@@ -35,6 +35,8 @@ define(["events", "gloo", "util", "data"],
             }
             // Initialize the canvas.
             var canvas = new VispyCanvas(canvas_el);
+
+            canvas.deactivate_context_menu();
 
             // Initialize events.
             this.events.init(canvas);

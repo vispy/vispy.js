@@ -20,10 +20,10 @@ function get_modifiers(e) {
 
 function get_key(e){
     var keynum = null;
-    if(window.event){ // IE                 
+    if(window.event){ // IE
         keynum = e.keyCode;
     }
-    else if(e.which){ // Netscape/Firefox/Opera                 
+    else if(e.which){ // Netscape/Firefox/Opera
             keynum = e.which;
          }
     return keynum;
@@ -57,7 +57,7 @@ function gen_mouse_event(c, e, type) {
         'modifiers': modifiers,
         'delta': null,
         'press_event': press_event,
-        
+
         'last_event': null,  // HACK: disabled to avoid recursion problems
     }
     return event;
@@ -92,7 +92,7 @@ function gen_key_event(c, e, type) {
         'type': type,
         'modifiers': modifiers,
         'key': get_key(e),
-        
+
         'last_event': null,  // HACK: disabled to avoid recursion problems
     }
     return event;
@@ -118,35 +118,35 @@ VispyCanvas.prototype._paint = function(e) { };
 
 
 /* Registering handlers */
-VispyCanvas.prototype.on_mouse_press = function(f) { 
-    this._mouse_press = f; 
+VispyCanvas.prototype.on_mouse_press = function(f) {
+    this._mouse_press = f;
 };
-VispyCanvas.prototype.on_mouse_release = function(f) { 
-    this._mouse_release = f; 
+VispyCanvas.prototype.on_mouse_release = function(f) {
+    this._mouse_release = f;
 };
-VispyCanvas.prototype.on_mouse_move = function(f) { 
-    this._mouse_move = f; 
+VispyCanvas.prototype.on_mouse_move = function(f) {
+    this._mouse_move = f;
 };
-VispyCanvas.prototype.on_mouse_wheel = function(f) { 
-    this._mouse_wheel = f; 
+VispyCanvas.prototype.on_mouse_wheel = function(f) {
+    this._mouse_wheel = f;
 };
-VispyCanvas.prototype.on_mouse_dblclick = function(f) { 
-    this._mouse_dblclick = f; 
+VispyCanvas.prototype.on_mouse_dblclick = function(f) {
+    this._mouse_dblclick = f;
 };
-VispyCanvas.prototype.on_key_press = function(f) { 
-    this._key_press = f; 
+VispyCanvas.prototype.on_key_press = function(f) {
+    this._key_press = f;
 };
-VispyCanvas.prototype.on_key_release = function(f) { 
-    this._key_release = f; 
+VispyCanvas.prototype.on_key_release = function(f) {
+    this._key_release = f;
 };
 VispyCanvas.prototype.on_initialize = function(f) {
     this._initialize = f;
 };
-VispyCanvas.prototype.on_resize = function(f) { 
-    this._resize = f; 
+VispyCanvas.prototype.on_resize = function(f) {
+    this._resize = f;
 };
-VispyCanvas.prototype.on_paint = function(f) { 
-    this._paint = f; 
+VispyCanvas.prototype.on_paint = function(f) {
+    this._paint = f;
 };
 
 
@@ -197,6 +197,10 @@ VispyCanvas.prototype.toggle_fullscreen = function() {
         }
     }
 };
+
+VispyCanvas.prototype.deactivate_context_menu = function() {
+    document.oncontextmenu = function () { return false; };
+}
 
 VispyCanvas.prototype.resizable = function() {
     var that = this;
@@ -308,18 +312,18 @@ function init_app(c) {
         'last_event': null,
         'delta': null,
     }
-    
+
     // HACK: boolean stating whether a mouse button is pressed.
     // This is necessary because e.button==0 in two cases: no
     // button is pressed, or the left button is pressed.
     c._eventinfo.is_button_pressed = 0;
-    
+
     c.$el.mousemove(function(e) {
         var event = gen_mouse_event(c, e, 'mouse_move');
-        
+
         // Vispy callbacks.
         c._mouse_move(event);
-        
+
         // Save the last event.
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
@@ -327,10 +331,10 @@ function init_app(c) {
     c.$el.mousedown(function(e) {
         ++c._eventinfo.is_button_pressed;
         var event = gen_mouse_event(c, e, 'mouse_press');
-        
+
         // Vispy callbacks.
         c._mouse_press(event);
-        
+
         // Save the last press event.
         c._eventinfo.press_event = event;
         // Save the last event.
@@ -340,10 +344,10 @@ function init_app(c) {
     c.$el.mouseup(function(e) {
         --c._eventinfo.is_button_pressed;
         var event = gen_mouse_event(c, e, 'mouse_release');
-        
+
         // Vispy callbacks.
         c._mouse_release(event);
-        
+
         // Reset the last press event.
         c._eventinfo.press_event = null;
         // Save the last event.
@@ -355,7 +359,7 @@ function init_app(c) {
         c._eventinfo.press_event = null;
     });
     c.$el.dblclick(function(e) {
-    
+
         // Reset the last press event.
         c._eventinfo.press_event = null;
     });
@@ -364,37 +368,37 @@ function init_app(c) {
         c.$el.mousewheel(function(e) {
             var event = gen_mouse_event(c, e, 'mouse_wheel');
             event.delta = [e.wheelDeltaX / 100., e.wheelDeltaY / 100.];
-            
+
             // Vispy callbacks.
             c._mouse_wheel(event);
-            
+
             // Save the last event.
             // c._eventinfo.last_event = event;
             c.event_queue.append(event);
         });
     }
-    
+
     // HACK: this is to extend the mouse events outside the canvas
     // document.onmousemove = c.onmousemove;
     // document.onmousedown = c.onmousedown;
     // document.onmouseup = c.onmouseup;
-    
+
     c.$el.keypress(function(e) {
         var event = gen_key_event(c, e, 'key_press');
-        
+
         // Vispy callbacks.
         c._key_press(event);
-        
+
         // Save the last event.
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
     c.$el.keyup(function(e) {
         var event = gen_key_event(c, e, 'key_release');
-        
+
         // Vispy callbacks.
         c._key_release(event);
-        
+
         // Save the last event.
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
@@ -402,7 +406,7 @@ function init_app(c) {
     c.$el.keydown(function(e) {
         //c._eventinfo.modifiers = get_modifiers(e);
     });
-    
+
     c.$el.mouseout(function(e) {
     });
 }
