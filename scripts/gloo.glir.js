@@ -11,7 +11,7 @@ function clear(c, color) {
 function compile_shader(c, type, source) {
     //source = "precision mediump float;\n" + source;
     source = source.replace(/\\n/g, "\n")
-    
+
     var shader = c.gl.createShader(c.gl[type]);
 
     c.gl.shaderSource(shader, source);
@@ -57,7 +57,7 @@ function activate_attribute(c, attribute_handle, vbo_id, type, stride, offset) {
 
     c.gl.enableVertexAttribArray(attribute_handle);
     c.gl.bindBuffer(c.gl.ARRAY_BUFFER, vbo_handle);
-    c.gl.vertexAttribPointer(attribute_handle, ndim, 
+    c.gl.vertexAttribPointer(attribute_handle, ndim,
                              c.gl[attribute_type],
                              false, stride, offset);
 }
@@ -75,7 +75,7 @@ function activate_texture(c, texture_handle, sampler_handle, texture_index) {
 
 function set_texture_data(c, object_handle, gl_type, format, width, height, array) {
     c.gl.bindTexture(gl_type, object_handle);
-    c.gl.texImage2D(gl_type, 0, format, width, height, 0, 
+    c.gl.texImage2D(gl_type, 0, format, width, height, 0,
                     format, c.gl.UNSIGNED_BYTE, array);
 }
 
@@ -209,7 +209,7 @@ VispyCanvas.prototype.execute_pending_commands = function() {
     this.glir_queue.clear();
 };
 
-VispyCanvas.prototype.command = function(command, deferred) { 
+VispyCanvas.prototype.command = function(command, deferred) {
     if (deferred == undefined) {
         deferred = this._deferred;
     }
@@ -253,7 +253,7 @@ define(function() {
         if (cls == 'VertexBuffer') {
             debug("Creating vertex buffer '{0}'.".format(id));
             c._ns[id] = {
-                object_type: cls, 
+                object_type: cls,
                 handle: c.gl.createBuffer(),
                 size: 0,  // current size of the buffer
             };
@@ -261,7 +261,7 @@ define(function() {
         else if (cls == 'IndexBuffer') {
             debug("Creating index buffer '{0}'.".format(id));
             c._ns[id] = {
-                object_type: cls, 
+                object_type: cls,
                 handle: c.gl.createBuffer(),
                 size: 0,  // current size of the buffer
             };
@@ -269,7 +269,7 @@ define(function() {
         else if (cls == 'Texture2D') {
             debug("Creating texture '{0}'.".format(id));
             c._ns[id] = {
-                object_type: cls, 
+                object_type: cls,
                 handle: c.gl.createTexture(),
                 size: 0,  // current size of the texture
                 shape: [],
@@ -330,7 +330,7 @@ define(function() {
     glir.prototype.size = function(c, args) {
         var object_id = args[0];
         var size = args[1];  // WARNING: size must be in bytes!
-        var format = args[2];  
+        var format = args[2];
         var object = c._ns[object_id];
         var object_handle = object.handle;
         var object_type = object.object_type;
@@ -344,7 +344,7 @@ define(function() {
             // HACK: it doesn't seem we can change the texture size without allocating
             // a buffer in WebGL, so we just store the size and format in the object,
             // and we'll use this information in the subsequent DATA call.
-            // set_texture_data(c, object_handle, gl_type, c.gl[object.format], 
+            // set_texture_data(c, object_handle, gl_type, c.gl[object.format],
             //     size[0], size[1], size)
         }
         // Buffers
@@ -426,7 +426,7 @@ define(function() {
         var name = args[1];
         var type = args[2];
         var value = args[3];
-        
+
         var program_handle = c._ns[program_id].handle;
 
         c.gl.useProgram(program_handle);
@@ -463,7 +463,7 @@ define(function() {
         var program_handle = c._ns[program_id].handle;
         // The texture number is the number of textures existing in the program.
         var texture_number = Object.keys(c._ns[program_id].textures).length;
-        
+
         debug("Initializing texture '{0}' number {1} for program '{2}'.".format(
                 texture_id, texture_number, program_id
             ));
@@ -477,7 +477,7 @@ define(function() {
             sampler_handle: sampler_handle,
             number: texture_number,
             handle: texture_handle,
-        };  
+        };
     }
 
     glir.prototype.interpolation = function(c, args) {
@@ -485,7 +485,7 @@ define(function() {
         var min = args[1];
         var mag = args[2];
         var texture_handle = c._ns[texture_id].handle;
-        
+
         var gl_type = c.gl.TEXTURE_2D;
         c.gl.bindTexture(gl_type, texture_handle);
         c.gl.texParameteri(gl_type, c.gl.TEXTURE_MIN_FILTER, c.gl[min]);
@@ -497,7 +497,7 @@ define(function() {
         var texture_id = args[0];
         var wrapping = args[1];
         var texture_handle = c._ns[texture_id].handle;
-        
+
         var gl_type = c.gl.TEXTURE_2D;
         c.gl.bindTexture(gl_type, texture_handle);
         c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_S, c.gl[wrapping[0]]);
@@ -519,7 +519,7 @@ define(function() {
             var attribute = attributes[attribute_name];
             debug("Activating attribute '{0}' for program '{1}'.".format(
                 attribute_name, program_id));
-            activate_attribute(c, attribute.handle, attribute.vbo_id, 
+            activate_attribute(c, attribute.handle, attribute.vbo_id,
                 attribute.type, attribute.stride, attribute.offset);
         }
 
@@ -542,7 +542,7 @@ define(function() {
             debug("Rendering program '{0}' with {1}.".format(
                 program_id, mode));
             c.gl.drawArrays(c.gl[mode], start, count);
-        }     
+        }
         else if (selection.length == 3) {
             // Draw the program with index buffer.
             var index_buffer_id = selection[0];
