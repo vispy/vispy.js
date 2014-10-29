@@ -245,7 +245,11 @@ define(function() {
         c._deferred = true;
         c.glir_queue = new GlirQueue();
         c.glir = this;
-    }
+    };
+
+    glir.prototype.current = function(c, args) {
+
+    };
 
     glir.prototype.create = function(c, args) {
         var id = args[0];
