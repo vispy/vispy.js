@@ -36,6 +36,7 @@ var _key_map = {
     9: 'TAB',
     13: 'ENTER',
     16: 'SHIFT',
+    17: 'CONTROL',
     18: 'ALT',
     27: 'ESCAPE',
     32: 'SPACE',
@@ -51,6 +52,21 @@ var _key_map = {
     46: 'DELETE',
     91: 'META',
     92: 'META',
+    96: '0',
+    97: '1',
+    98: '2',
+    99: '3',
+    100: '4',
+    101: '5',
+    102: '6',
+    103: '7',
+    104: '8',
+    105: '9',
+    106: '*',
+    107: '+',
+    109: '-',
+    110: '.',
+    111: '/',
     112: 'F1',
     113: 'F2',
     114: 'F3',
@@ -63,17 +79,25 @@ var _key_map = {
     121: 'F10',
     122: 'F11',
     123: 'F12',
+    186: ';',
+    187: '=',
+    188: ',',
+    189: '-',
+    190: '.',
+    191: '/',
+    192: '`',
+    219: '[',
+    220: '\\',
+    221: ']',
+    222: '\'',
 };
 function get_key_code(e){
     // Return a string representation of a key. It will be interpreted by
     // Vispy.
     var keynum = _get_keynum(e);
-    var key_text = get_key_text(keynum);
-    if (key_text.length > 0) {
-        var key_code = key_text;
-    }
-    else {
-        var key_code = _key_map[keynum];
+    var key_code = _key_map[keynum];
+    if (key_code == undefined) {
+        key_code = get_key_text(keynum);
     }
     return key_code;
 }
