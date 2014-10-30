@@ -54,8 +54,8 @@ require(["vispy"], function(vispy) {
             this.command(['SIZE', 'myvbo', 8*4]);
 
             // Two different ways of specifying the data.
-            // data = new Float32Array([-0.5, -0.5, 
-            //                           0.5, -0.5, 
+            // data = new Float32Array([-0.5, -0.5,
+            //                           0.5, -0.5,
             //                          -0.5,  0.5,
             //                           0.5,  0.5,])
             data = {
@@ -71,7 +71,7 @@ require(["vispy"], function(vispy) {
                  0., 2.,
                  2., 2.,
                  ])]);
-            
+
             this.command(['CREATE', 'myib', 'IndexBuffer']);
             this.command(['DATA', 'myib', 0, new Uint16Array(
                 [0,1,2,3,2,1
@@ -92,15 +92,15 @@ require(["vispy"], function(vispy) {
                                      'vec2', ['myvbo', 0, 0]]);
             this.command(['ATTRIBUTE', 'myprogram', 'a_texcoords',
                                      'vec2', ['mytexcoords', 0, 0]]);
-            this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
+            this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3',
                 new Float32Array([1., 1., 1.])]);
-            this.command(['UNIFORM', 'myprogram', 'u_mat', 'mat4', 
+            this.command(['UNIFORM', 'myprogram', 'u_mat', 'mat4',
                 new Float32Array([
                     0,0,0,0,
                     0,0,0,1,
                     0,0,0,0,
                     0,0,0,0])]);
-            
+
             this.command(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
             this.command(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
             this.command(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
@@ -129,7 +129,7 @@ require(["vispy"], function(vispy) {
             // Get the normalized mouse position.
             var u = event.pos[0] / this.width;
             var v = event.pos[1] / this.height;
-            
+
             // Update a data point when dragging.
             if (event.is_dragging) {
                 this.command(['DATA', 'myvbo', 2*4,  // 2 float32 elements
@@ -137,11 +137,15 @@ require(["vispy"], function(vispy) {
             }
 
             // Update the color.
-            this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3', 
+            this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3',
                 new Float32Array([u, v, 1.])]);
-            
+
             // Refresh the window.
             this.update();
+        });
+
+        c.on_key_press(function(event) {
+            console.log(event);
         });
 
         c.initialize();
@@ -163,7 +167,7 @@ require(["vispy"], function(vispy) {
 
     var c = initialize_canvas("#mycanvas");
     initialize_canvas("#mycanvas2");
-    
+
     // Toggle fullscreen for the canvas when 'f' is pressed.
     $(window).keypress(function(e) {
         if (String.fromCharCode(e.which) == 'f') {
@@ -188,7 +192,7 @@ require(["vispy"], function(vispy) {
     cursor: default;
 }
 </style>
-</head> 
+</head>
 <body>
 <canvas id="mycanvas"></canvas>
 <canvas id="mycanvas2"></canvas>

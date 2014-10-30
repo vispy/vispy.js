@@ -18,19 +18,64 @@ function get_modifiers(e) {
     return modifiers;
 }
 
-function get_key(e){
-    var keynum = null;
+function get_key_text(keynum) {
+    return String.fromCharCode(keynum).toUpperCase().trim();
+}
+
+function _get_keynum(e){
     if(window.event){ // IE
-        keynum = e.keyCode;
+        return e.keyCode;
     }
     else if(e.which){ // Netscape/Firefox/Opera
-            keynum = e.which;
-         }
-    return keynum;
-    if (keynum != null)
-        return String.fromCharCode(keynum).toLowerCase();
-    else
-        return null;
+        return e.which;
+    }
+}
+
+var _key_map = {
+    8: 'BACKSPACE',
+    9: 'TAB',
+    13: 'ENTER',
+    16: 'SHIFT',
+    18: 'ALT',
+    27: 'ESCAPE',
+    32: 'SPACE',
+    33: 'PAGEUP',
+    34: 'PAGEDOWN',
+    35: 'END',
+    36: 'HOME',
+    37: 'LEFT',
+    38: 'UP',
+    39: 'RIGHT',
+    40: 'DOWN',
+    45: 'INSERT',
+    46: 'DELETE',
+    91: 'META',
+    92: 'META',
+    112: 'F1',
+    113: 'F2',
+    114: 'F3',
+    115: 'F4',
+    116: 'F5',
+    117: 'F6',
+    118: 'F7',
+    119: 'F8',
+    120: 'F9',
+    121: 'F10',
+    122: 'F11',
+    123: 'F12',
+};
+function get_key_code(e){
+    // Return a string representation of a key. It will be interpreted by
+    // Vispy.
+    var keynum = _get_keynum(e);
+    var key_text = get_key_text(keynum);
+    if (key_text.length > 0) {
+        var key_code = key_text;
+    }
+    else {
+        var key_code = _key_map[keynum];
+    }
+    return key_code;
 }
 
 
@@ -91,8 +136,7 @@ function gen_key_event(c, e, type) {
     var event = {
         'type': type,
         'modifiers': modifiers,
-        'key': get_key(e),
-
+        'key_code': get_key_code(e),
         'last_event': null,  // HACK: disabled to avoid recursion problems
     }
     return event;
@@ -382,12 +426,7 @@ function init_app(c) {
         });
     }
 
-    // HACK: this is to extend the mouse events outside the canvas
-    // document.onmousemove = c.onmousemove;
-    // document.onmousedown = c.onmousedown;
-    // document.onmouseup = c.onmouseup;
-
-    c.$el.keypress(function(e) {
+    c.$el.keydown(function(e) {
         var event = gen_key_event(c, e, 'key_press');
 
         // Vispy callbacks.
@@ -406,9 +445,6 @@ function init_app(c) {
         // Save the last event.
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
-    });
-    c.$el.keydown(function(e) {
-        //c._eventinfo.modifiers = get_modifiers(e);
     });
 
     c.$el.mouseout(function(e) {
