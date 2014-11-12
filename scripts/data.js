@@ -46,7 +46,8 @@ function to_array_buffer(data) {
         // A JavaScript Typedarray.
         return contents;
     }
-    else if (storage_type == "javascript_data_view") {
+    else if (storage_type == "binary") {
+        // "binary" means that binary WebSocket has been used
         // A JavaScript ArrayBuffer referenced by the data view.
         return contents.buffer;
     }
