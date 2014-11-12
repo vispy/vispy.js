@@ -24,7 +24,7 @@ var _typed_array_map = {
 function to_array_buffer(data) {
 
     // Return a TypedArray from a JSON object describing a data buffer.
-    // storage_type is one of 'javascript_array', 'javascript_typed_array', 
+    // storage_type is one of 'javascript_array', 'javascript_typed_array',
     // 'base64', 'png'
     var storage_type = data["storage_type"];
 
@@ -41,11 +41,16 @@ function to_array_buffer(data) {
         // A regular JavaScript array, the type must be specified in 'data_type'.
         return _typed_array_map[data_type](contents);
     }
-    else if (storage_type == "javascript_typed_array" || storage_type == "array_buffer") {
+    else if (storage_type == "javascript_typed_array" ||
+             storage_type == "array_buffer") {
         // A JavaScript Typedarray.
         return contents;
     }
-    if (storage_type == "base64") {
+    else if (storage_type == "javascript_data_view") {
+        // A JavaScript ArrayBuffer referenced by the data view.
+        return contents.buffer;
+    }
+    else if (storage_type == "base64") {
         var array = decode_base64(contents);
         return array;
     }
