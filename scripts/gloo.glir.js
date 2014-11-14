@@ -353,11 +353,10 @@ define(function() {
             // format is 'LUMINANCE', 'ALPHA', 'LUMINANCE_ALPHA', 'RGB' or 'RGBA'
             object.format = format.toUpperCase();
             debug("Setting texture size to {1} for '{0}'.".format(object_id, size));
-            // HACK: it doesn't seem we can change the texture size without allocating
-            // a buffer in WebGL, so we just store the size and format in the object,
-            // and we'll use this information in the subsequent DATA call.
-            // set_texture_data(c, object_handle, gl_type, c.gl[object.format],
-            //     size[0], size[1], size)
+            // HACK: it doesn't seem we can change the texture size without
+            // allocating a buffer in WebGL, so we just store the size and
+            // format in the object, and we'll use this information in the
+            // subsequent DATA call.
         }
         // Buffers
         else
@@ -386,8 +385,10 @@ define(function() {
         if (object_type.indexOf('Texture') >= 0) {
             // The texture shape was specified in SIZE
             var shape = object.size;
-            var width = shape[0];
-            var height = shape[1];
+            // WARNING: this is height and then width, not the other way
+            // around.
+            var height = shape[0];
+            var width = shape[1];
 
             // The texture format was specified in SIZE.
             var format = c.gl[object.format];
