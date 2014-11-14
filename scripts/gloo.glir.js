@@ -75,6 +75,10 @@ function activate_texture(c, texture_handle, sampler_handle, texture_index) {
 
 function set_texture_data(c, object_handle, gl_type, format, width, height, array) {
     c.gl.bindTexture(gl_type, object_handle);
+
+    // TODO: choose a better alignment
+    c.gl.pixelStorei(c.gl.UNPACK_ALIGNMENT, 1);
+
     c.gl.texImage2D(gl_type, 0, format, width, height, 0,
                     format, c.gl.UNSIGNED_BYTE, array);
 }
@@ -486,8 +490,8 @@ define(function() {
 
     glir.prototype.interpolation = function(c, args) {
         var texture_id = args[0];
-        var min = args[1];
-        var mag = args[2];
+        var min = args[1].toUpperCase();
+        var mag = args[2].toUpperCase();
         var texture_handle = c._ns[texture_id].handle;
 
         var gl_type = c.gl.TEXTURE_2D;
@@ -504,8 +508,10 @@ define(function() {
 
         var gl_type = c.gl.TEXTURE_2D;
         c.gl.bindTexture(gl_type, texture_handle);
-        c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_S, c.gl[wrapping[0]]);
-        c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_T, c.gl[wrapping[1]]);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_S,
+                           c.gl[wrapping[0].toUpperCase()]);
+        c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_T,
+                           c.gl[wrapping[1].toUpperCase()]);
         c.gl.bindTexture(gl_type, null);
     }
 
