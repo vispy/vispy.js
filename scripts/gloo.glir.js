@@ -79,8 +79,12 @@ function set_texture_data(c, object_handle, gl_type, format, width, height, arra
     // TODO: choose a better alignment
     c.gl.pixelStorei(c.gl.UNPACK_ALIGNMENT, 1);
 
+    // BUGFIX: the last argument cannot be an ArrayBuffer: it needs to be
+    // a uint8 view.
+    var array_view = new Uint8Array(array);
+
     c.gl.texImage2D(gl_type, 0, format, width, height, 0,
-                    format, c.gl.UNSIGNED_BYTE, array);
+                    format, c.gl.UNSIGNED_BYTE, array_view);
 }
 
 function set_buffer_data(c, object_handle, gl_type, offset, array, reuse) {
