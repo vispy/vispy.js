@@ -251,6 +251,10 @@ VispyCanvas.prototype.event_tick = function() {
     this.execute_pending_commands();
 };
 
+VispyCanvas.prototype.is_fullscreen = function() {
+    return (screenfull.enabled) & (screenfull.isFullscreen);
+};
+
 VispyCanvas.prototype.toggle_fullscreen = function() {
     if (screenfull.enabled) {
         if(screenfull.isFullscreen) {
