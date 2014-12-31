@@ -205,9 +205,10 @@ VispyCanvas.prototype.set_deferred = function(deferred) {
 }
 
 VispyCanvas.prototype.execute_pending_commands = function() {
+    /* Return the number of executed GLIR commands. */
     var q = this.glir_queue.get();
     if (q.length == 0) {
-        return;
+        return 0;
     }
     for (var i = 0; i < q.length; i++) {
         // console.debug(q[i]);
@@ -215,6 +216,7 @@ VispyCanvas.prototype.execute_pending_commands = function() {
     }
     debug("Processed {0} events.".format(q.length));
     this.glir_queue.clear();
+    return q.length;
 };
 
 VispyCanvas.prototype.command = function(command, deferred) {

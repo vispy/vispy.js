@@ -182,6 +182,7 @@ VispyCanvas.prototype._key_release = function(e) { };
 VispyCanvas.prototype._initialize = function(e) { };
 VispyCanvas.prototype._resize = function(e) { };
 VispyCanvas.prototype._paint = function(e) { };
+VispyCanvas.prototype._event_tick = function(e) { };
 
 
 
@@ -216,6 +217,9 @@ VispyCanvas.prototype.on_resize = function(f) {
 VispyCanvas.prototype.on_paint = function(f) {
     this._paint = f;
 };
+VispyCanvas.prototype.on_event_tick = function(f) {
+    this._event_tick = f;
+};
 
 
 VispyCanvas.prototype.initialize = function() {
@@ -233,8 +237,9 @@ VispyCanvas.prototype._set_size = function(size) {
     return size;
 }
 VispyCanvas.prototype.paint = function() {
+    /* Add a paint event in the event queue. */
     var event = gen_paint_event(this);
-    this._paint(event);
+    this.event_queue.append(event);
 };
 VispyCanvas.prototype.update = VispyCanvas.prototype.paint;
 VispyCanvas.prototype.resize = function(size) {
@@ -248,7 +253,14 @@ VispyCanvas.prototype.resize = function(size) {
 };
 
 VispyCanvas.prototype.event_tick = function() {
-    this.execute_pending_commands();
+    this._event_tick();
+    var ncommands = this.execute_pending_commands();
+    if (ncommands > 0) {
+        // At least 1 GLIR command has been executed here.
+        // We call the on_paint callback function here.
+        var event = gen_paint_event(this);
+        this._paint(event);
+    }
 };
 
 VispyCanvas.prototype.is_fullscreen = function() {
