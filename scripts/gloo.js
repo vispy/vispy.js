@@ -1,3 +1,5 @@
+var glir = require('./gloo.glir.js');
+
 function init_webgl(c) {
     // Get the DOM object, not the jQuery one.
     var canvas = c.$el.get(0);

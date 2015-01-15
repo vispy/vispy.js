@@ -1,3 +1,10 @@
+var VispyCanvas = require('./vispycanvas.js');
+var util = require('./util.js');
+var data = require('./data.js');
+
+var debug = util.debug;
+var to_array_buffer = data.to_array_buffer;
+
 /* WebGL utility functions */
 function viewport(c) {
     c.gl.viewport(0, 0, c.width(), c.height());
@@ -196,7 +203,6 @@ GlirQueue.prototype.get = function() {
 Object.defineProperty(GlirQueue.prototype, "length", {
     get: function() { return this._queue.length; },
 });
-
 
 
 /* Vispy canvas GLIR methods */

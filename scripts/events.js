@@ -1,3 +1,5 @@
+var VispyCanvas = require('./vispycanvas.js');
+
 /* Internal functions */
 function get_pos(c, e) {
     var rect = c.getBoundingClientRect();
@@ -330,7 +332,7 @@ EventQueue.prototype.append = function(e, compress) {
     // Compression allows several similar consecutive events to be merged
     // into a single event, for performance reasons (notably, 'mouse_move').
     var add_to_queue = true;
-    if (compress == undefined) {
+    if (compress == undefined) {
         compress = true;
     }
     if (compress) {

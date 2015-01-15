@@ -6,164 +6,163 @@ Vispy.js requires jQuery, jQueryUI, jQuery mousewheel plugin.
 -->
 <script src="scripts/lib/jquery.min.js"></script>
 <script src="scripts/lib/jquery-ui/jquery-ui.min.js"></script>
-<script src="scripts/lib/jquery.mousewheel.min.js"></script>
+<!-- <script src="scripts/lib/jquery.mousewheel.min.js"></script> -->
 
-<script src="scripts/lib/require.js"></script>
+<!-- <script src="scripts/lib/require.js"></script> -->
 <script src="dist/vispy.min.js"></script>
 
 <!-- <script data-main="scripts/vispy" src="scripts/lib/require.js"></script> -->
 
 <script>
 
-require(["vispy"], function(vispy) {
+// VISPY_DEBUG enables debug logging and disables the GLIR deferred mode.
+VISPY_DEBUG = false;
 
-    // VISPY_DEBUG enables debug logging and disables the GLIR deferred mode.
-    VISPY_DEBUG = false;
+// var vispy = new Vispy();
 
+function initialize_canvas(canvas_id) {
+    var c = vispy.init(canvas_id);
 
-    function initialize_canvas(canvas_id) {
-        var c = vispy.init(canvas_id);
+    // Shaders.
+    var VS = "\
+    precision mediump float; \
+    attribute vec2 a_position; \
+    attribute vec2 a_texcoords; \
+    varying vec2 v_position; \
+    void main() { \
+        gl_Position = vec4(a_position, 0, 1); \
+        v_position = a_texcoords; \
+    }";
 
-        // Shaders.
-        var VS = "\
-        precision mediump float; \
-        attribute vec2 a_position; \
-        attribute vec2 a_texcoords; \
-        varying vec2 v_position; \
-        void main() { \
-            gl_Position = vec4(a_position, 0, 1); \
-            v_position = a_texcoords; \
-        }";
+    var FS = "\
+    precision mediump float; \
+    uniform vec3 u_color; \
+    uniform mat4 u_mat; \
+    uniform sampler2D u_sampler; \
+    varying vec2 v_position; \
+    void main() { \
+        vec4 color = texture2D(u_sampler, v_position); \
+        color.rgb = color.rgb * u_color; \
+        color.b = u_mat[1][3]; \
+        gl_FragColor = color; \
+    }";
 
-        var FS = "\
-        precision mediump float; \
-        uniform vec3 u_color; \
-        uniform mat4 u_mat; \
-        uniform sampler2D u_sampler; \
-        varying vec2 v_position; \
-        void main() { \
-            vec4 color = texture2D(u_sampler, v_position); \
-            color.rgb = color.rgb * u_color; \
-            color.b = u_mat[1][3]; \
-            gl_FragColor = color; \
-        }";
+    // Initialize the scene.
+    c.on_initialize(function (event) {
+        this.command(['CREATE', 'myvbo', 'VertexBuffer']);
+        this.command(['SIZE', 'myvbo', 8*4]);
 
-        // Initialize the scene.
-        c.on_initialize(function (event) {
-            this.command(['CREATE', 'myvbo', 'VertexBuffer']);
-            this.command(['SIZE', 'myvbo', 8*4]);
+        // Two different ways of specifying the data.
+        // data = new Float32Array([-0.5, -0.5,
+        //                           0.5, -0.5,
+        //                          -0.5,  0.5,
+        //                           0.5,  0.5,])
+        data = {
+            'storage_type': 'base64',
+            'buffer': 'AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8=',
+        };
+        this.command(['DATA', 'myvbo', 0, data]);
 
-            // Two different ways of specifying the data.
-            // data = new Float32Array([-0.5, -0.5,
-            //                           0.5, -0.5,
-            //                          -0.5,  0.5,
-            //                           0.5,  0.5,])
-            data = {
-                'storage_type': 'base64',
-                'buffer': 'AAAAvwAAAL8AAAA/AAAAvwAAAL8AAAA/AAAAPwAAAD8=',
-            };
-            this.command(['DATA', 'myvbo', 0, data]);
+        this.command(['CREATE', 'mytexcoords', 'VertexBuffer']);
+        this.command(['DATA', 'mytexcoords', 0, new Float32Array(
+            [0., 0.,
+             2., 0.,
+             0., 2.,
+             2., 2.,
+             ])]);
 
-            this.command(['CREATE', 'mytexcoords', 'VertexBuffer']);
-            this.command(['DATA', 'mytexcoords', 0, new Float32Array(
-                [0., 0.,
-                 2., 0.,
-                 0., 2.,
-                 2., 2.,
-                 ])]);
+        this.command(['CREATE', 'myib', 'IndexBuffer']);
+        this.command(['DATA', 'myib', 0, new Uint16Array(
+            [0,1,2,3,2,1
+             ])]);
 
-            this.command(['CREATE', 'myib', 'IndexBuffer']);
-            this.command(['DATA', 'myib', 0, new Uint16Array(
-                [0,1,2,3,2,1
-                 ])]);
+        this.command(['CREATE', 'mytex', 'Texture2D']);
+        this.command(['SIZE', 'mytex', [2, 2], 'RGBA']);
+        this.command(['DATA', 'mytex', [0, 0], new Uint8Array(
+            [100,100,100,255,
+             255,255,255,255,
+             255,255,255,255,
+             100,100,100,255]
+             )]);
 
-            this.command(['CREATE', 'mytex', 'Texture2D']);
-            this.command(['SIZE', 'mytex', [2, 2], 'RGBA']);
-            this.command(['DATA', 'mytex', [0, 0], new Uint8Array(
-                [100,100,100,255,
-                 255,255,255,255,
-                 255,255,255,255,
-                 100,100,100,255]
-                 )]);
+        this.command(['CREATE', 'myprogram', 'Program']);
+        this.command(['SHADERS', 'myprogram', VS, FS]);
+        this.command(['ATTRIBUTE', 'myprogram', 'a_position',
+                                 'vec2', ['myvbo', 0, 0]]);
+        this.command(['ATTRIBUTE', 'myprogram', 'a_texcoords',
+                                 'vec2', ['mytexcoords', 0, 0]]);
+        this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3',
+            new Float32Array([1., 1., 1.])]);
+        this.command(['UNIFORM', 'myprogram', 'u_mat', 'mat4',
+            new Float32Array([
+                0,0,0,0,
+                0,0,0,1,
+                0,0,0,0,
+                0,0,0,0])]);
 
-            this.command(['CREATE', 'myprogram', 'Program']);
-            this.command(['SHADERS', 'myprogram', VS, FS]);
-            this.command(['ATTRIBUTE', 'myprogram', 'a_position',
-                                     'vec2', ['myvbo', 0, 0]]);
-            this.command(['ATTRIBUTE', 'myprogram', 'a_texcoords',
-                                     'vec2', ['mytexcoords', 0, 0]]);
-            this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3',
-                new Float32Array([1., 1., 1.])]);
-            this.command(['UNIFORM', 'myprogram', 'u_mat', 'mat4',
-                new Float32Array([
-                    0,0,0,0,
-                    0,0,0,1,
-                    0,0,0,0,
-                    0,0,0,0])]);
+        this.command(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
+        this.command(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
+        this.command(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
 
-            this.command(['TEXTURE', 'myprogram', 'u_sampler', 'mytex']);
-            this.command(['INTERPOLATION', 'mytex', 'LINEAR', 'NEAREST']);
-            this.command(['WRAPPING', 'mytex', ['REPEAT', 'REPEAT']]);
+        // Enable transparency.
+        this.command(['FUNC', 'blendFunc', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA']);
+        this.command(['FUNC', 'enable', 'BLEND']);
+    });
 
-            // Enable transparency.
-            this.command(['FUNC', 'blendFunc', 'SRC_ALPHA', 'ONE_MINUS_SRC_ALPHA']);
-            this.command(['FUNC', 'enable', 'BLEND']);
-        });
+    // Update the viewport upon resize.
+    c.on_resize(function(event) {
+        this.command(['FUNC', 'viewport', 0, 0, event.size[0], event.size[1]]);
+        this.update();
+    });
 
-        // Update the viewport upon resize.
-        c.on_resize(function(event) {
-            this.command(['FUNC', 'viewport', 0, 0, event.size[0], event.size[1]]);
-            this.update();
-        });
+    // Draw the scene.
+    c.on_paint(function(event) {
+        this.command(['FUNC', 'clearColor', 0, 0, 0, 1]);
+        this.command(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
+        this.command(['DRAW', 'myprogram', 'TRIANGLES',
+                                 ['myib', 'UNSIGNED_SHORT', 6]]);
+    });
 
-        // Draw the scene.
-        c.on_paint(function(event) {
-            this.command(['FUNC', 'clearColor', 0, 0, 0, 1]);
-            this.command(['FUNC', 'clear', 'COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT']);
-            this.command(['DRAW', 'myprogram', 'TRIANGLES',
-                                     ['myib', 'UNSIGNED_SHORT', 6]]);
-        });
+    // Interactivity on mouse movements.
+    c.on_mouse_move(function(event) {
+        // Get the normalized mouse position.
+        var u = event.pos[0] / this.width;
+        var v = event.pos[1] / this.height;
 
-        // Interactivity on mouse movements.
-        c.on_mouse_move(function(event) {
-            // Get the normalized mouse position.
-            var u = event.pos[0] / this.width;
-            var v = event.pos[1] / this.height;
+        // Update a data point when dragging.
+        if (event.is_dragging) {
+            this.command(['DATA', 'myvbo', 2*4,  // 2 float32 elements
+                new Float32Array([2*u-1, 1-2*v])]);
+        }
 
-            // Update a data point when dragging.
-            if (event.is_dragging) {
-                this.command(['DATA', 'myvbo', 2*4,  // 2 float32 elements
-                    new Float32Array([2*u-1, 1-2*v])]);
-            }
+        // Update the color.
+        this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3',
+            new Float32Array([u, v, 1.])]);
 
-            // Update the color.
-            this.command(['UNIFORM', 'myprogram', 'u_color', 'vec3',
-                new Float32Array([u, v, 1.])]);
+        // Refresh the window.
+        this.update();
+    });
 
-            // Refresh the window.
-            this.update();
-        });
+    c.on_key_press(function(event) {
+        console.log(event);
+    });
 
-        c.on_key_press(function(event) {
-            console.log(event);
-        });
+    c.initialize();
+    c.resize();  // resize triggers an paint event.
 
-        c.initialize();
-        c.resize();  // resize triggers an paint event.
+    // Toggle comments below to have the canvas span the entire window.
+    // Also, need to set #mycanvas width and height to 100% in the CSS.
+    c.resizable();
+    // window.onresize = function(event) {
+    //     c.resize();
+    // };
 
-        // Toggle comments below to have the canvas span the entire window.
-        // Also, need to set #mycanvas width and height to 100% in the CSS.
-        c.resizable();
-        // window.onresize = function(event) {
-        //     c.resize();
-        // };
+    return c;
 
-        return c;
-
-    }
-
+}
 
 
+$(document).ready(function() {
 
     var c = initialize_canvas("#mycanvas");
     initialize_canvas("#mycanvas2");
@@ -180,6 +179,7 @@ require(["vispy"], function(vispy) {
     vispy.start_event_loop();
 
 });
+
 </script>
 <style>
 #mycanvas, #mycanvas2 {

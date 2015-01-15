@@ -58,3 +58,5 @@ function debug(msg) {
         console.debug(msg);
     }
 }
+
+module.exports = {debug: debug};

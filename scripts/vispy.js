@@ -1,16 +1,13 @@
 var screenful = require("./lib/screenfull.min.js");
 var jquerymousewheel = require("./lib/jquery.mousewheel.min.js");
+var VispyCanvas = require('./vispycanvas.js');
 var gloo = require('./gloo.js');
 var events = require('./events.js');
 var util = require('./util.js');
 var data = require('./data.js');
 
 
-function VispyCanvas($el) {
-    this.$el = $el;
-}
-
-var vispy = function() {
+var Vispy = function() {
     // Constructor of the Vispy library.
     this.events = events;
     this.gloo = gloo;
@@ -19,7 +16,7 @@ var vispy = function() {
     this._canvases = [];
 };
 
-vispy.prototype.init = function(canvas_id) {
+Vispy.prototype.init = function(canvas_id) {
     var canvas_el;
     if (typeof canvas_id === 'string') {
         canvas_el = $(canvas_id);
@@ -46,7 +43,7 @@ vispy.prototype.init = function(canvas_id) {
 
 
 /* Event loop */
-vispy.prototype.start_event_loop = function() {
+Vispy.prototype.start_event_loop = function() {
     window.requestAnimFrame = (function(){
           return  window.requestAnimationFrame       ||
                   window.webkitRequestAnimationFrame ||
@@ -56,7 +53,7 @@ vispy.prototype.start_event_loop = function() {
                   };
     })();
 
-    // "that" is the current vispy instance.
+    // "that" is the current Vispy instance.
     var that = this;
     (function animloop() {
         that._request_id = requestAnimFrame(animloop);
@@ -73,9 +70,9 @@ vispy.prototype.start_event_loop = function() {
     })();
 };
 
-vispy.prototype.stop_event_loop = function() {
+Vispy.prototype.stop_event_loop = function() {
     window.cancelAnimationFrame(this._request_id);
 };
 
 
-module.exports = new vispy();
+global.vispy = new Vispy();
