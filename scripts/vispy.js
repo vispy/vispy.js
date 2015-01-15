@@ -1,89 +1,103 @@
-// Require paths.
-require.config({
-    paths: {
-        // "jquery": "lib/jquery-ui/external/jquery/jquery",
-        // "jquery": "lib/jquery.min",
-        // "jqueryui": "lib/jquery-ui/jquery-ui.min",
-        // "jquery-mousewheel": "lib/jquery.mousewheel.min",
-        "screenfull": "lib/screenfull.min",
-    }
-});
+var screenful = require("./lib/screenfull.min.js");
+var jquerymousewheel = require("./lib/jquery.mousewheel.min.js");
+var VispyCanvas = require('./vispycanvas.js');
+var gloo = require('./gloo.js');
+var events = require('./events.js');
+var util = require('./util.js');
+var data = require('./data.js');
 
-function VispyCanvas($el) {
-    this.$el = $el;
+
+var Vispy = function() {
+    // Constructor of the Vispy library.
+    this.events = events;
+    this.gloo = gloo;
+    this._is_loop_running = false;
+
+    // List of canvases on the page.
+    this._canvases = [];
+};
+
+Vispy.prototype.init = function(canvas_id) {
+    var canvas_el;
+    if (typeof canvas_id === 'string') {
+        canvas_el = $(canvas_id);
+    }
+    else {
+        canvas_el = canvas_id;
+    }
+    // Initialize the canvas.
+    var canvas = new VispyCanvas(canvas_el);
+
+    canvas.deactivate_context_menu();
+
+    // Initialize events.
+    this.events.init(canvas);
+
+    // Initialize WebGL.
+    this.gloo.init(canvas);
+
+    // Register the canvas.
+    this.register(canvas);
+
+    return canvas;
+};
+
+Vispy.prototype.register = function(canvas) {
+    /* Register a canvas. */
+    this._canvases.push(canvas);
+    console.log("Register", canvas);
+};
+
+Vispy.prototype.unregister = function(canvas) {
+    /* Unregister a canvas. */
+    var index = this._canvases.indexOf(canvas);
+    if (index > -1) {
+        this._canvases.splice(index, 1);
+    }
+    console.log("Unregister", canvas);
 }
 
-// Vispy library entry point.
-define(["events", "gloo", "util", "data"],
-    function(events, gloo) {
-        var vispy = function() {
-            // Constructor of the Vispy library.
-            this.events = events;
-            this.gloo = gloo;
 
-            // List of canvases on the page.
-            this._canvases = [];
-        };
+/* Event loop */
+Vispy.prototype.start_event_loop = function() {
 
-        vispy.prototype.init = function(canvas_id) {
-            var canvas_el;
-            if (typeof canvas_id === 'string') {
-                canvas_el = $(canvas_id);
+    // Do not start the event loop twice.
+    if (this._is_loop_running) return;
+
+    window.requestAnimFrame = (function(){
+          return  window.requestAnimationFrame       ||
+                  window.webkitRequestAnimationFrame ||
+                  window.mozRequestAnimationFrame    ||
+                  function(c){
+                    window.setTimeout(c, 1000. / 60.);
+                  };
+    })();
+
+    // "that" is the current Vispy instance.
+    var that = this;
+    (function animloop() {
+        that._request_id = requestAnimFrame(animloop);
+        try {
+            // Call event_tick() on all active canvases.
+            for (var i = 0; i < that._canvases.length; i++) {
+                that._canvases[i].event_tick();
             }
-            else {
-                canvas_el = canvas_id;
-            }
-            // Initialize the canvas.
-            var canvas = new VispyCanvas(canvas_el);
+        }
+        catch(err) {
+            that.stop_event_loop();
+            throw (err);
+        }
+    })();
 
-            canvas.deactivate_context_menu();
+    this._is_loop_running = true
+    console.debug("Event loop started.");
+};
 
-            // Initialize events.
-            this.events.init(canvas);
-
-            // Initialize WebGL.
-            this.gloo.init(canvas);
-
-            // Register the canvas.
-            this._canvases.push(canvas);
-
-            return canvas;
-        };
+Vispy.prototype.stop_event_loop = function() {
+    window.cancelAnimationFrame(this._request_id);
+    this._is_loop_running = false;
+    console.debug("Event loop stopped.");
+};
 
 
-
-        /* Event loop */
-        vispy.prototype.start_event_loop = function() {
-            window.requestAnimFrame = (function(){
-                  return  window.requestAnimationFrame       ||
-                          window.webkitRequestAnimationFrame ||
-                          window.mozRequestAnimationFrame    ||
-                          function(c){
-                            window.setTimeout(c, 1000. / 60.);
-                          };
-            })();
-
-            // "that" is the current vispy instance.
-            var that = this;
-            (function animloop() {
-                that._request_id = requestAnimFrame(animloop);
-                try {
-                    // Call event_tick() on all active canvases.
-                    for (var i = 0; i < that._canvases.length; i++) {
-                        that._canvases[i].event_tick();
-                    }
-                }
-                catch(err) {
-                    that.stop_event_loop();
-                    throw (err);
-                }
-            })();
-        };
-
-        vispy.prototype.stop_event_loop = function() {
-            window.cancelAnimationFrame(this._request_id);
-        };
-
-
-        return new vispy();
-});
+global.vispy = new Vispy();

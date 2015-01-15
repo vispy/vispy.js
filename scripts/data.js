@@ -56,3 +56,7 @@ function to_array_buffer(data) {
         return array;
     }
 }
+
+module.exports = {
+    to_array_buffer: to_array_buffer
+};

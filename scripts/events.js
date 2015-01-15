@@ -1,3 +1,5 @@
+var VispyCanvas = require('./vispycanvas.js');
+
 /* Internal functions */
 function get_pos(c, e) {
     var rect = c.getBoundingClientRect();
@@ -330,7 +332,7 @@ EventQueue.prototype.append = function(e, compress) {
     // Compression allows several similar consecutive events to be merged
     // into a single event, for performance reasons (notably, 'mouse_move').
     var add_to_queue = true;
-    if (compress == undefined) {
+    if (compress == undefined) {
         compress = true;
     }
     if (compress) {
@@ -493,15 +495,13 @@ function init_app(c) {
 
 
 /* Creation of vispy.events */
-define(["screenfull"], function() {
-    var events = function() {
-        // Constructor.
+var events = function() {
+    // Constructor.
 
-    };
+};
 
-    events.prototype.init = function(c) {
-        init_app(c);
-    };
+events.prototype.init = function(c) {
+    init_app(c);
+};
 
-    return new events();
-});
+module.exports = new events();
