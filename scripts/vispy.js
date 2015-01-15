@@ -37,10 +37,25 @@ Vispy.prototype.init = function(canvas_id) {
     this.gloo.init(canvas);
 
     // Register the canvas.
-    this._canvases.push(canvas);
+    this.register(canvas);
 
     return canvas;
 };
+
+Vispy.prototype.register = function(canvas) {
+    /* Register a canvas. */
+    this._canvases.push(canvas);
+    console.log("Register", canvas);
+};
+
+Vispy.prototype.unregister = function(canvas) {
+    /* Unregister a canvas. */
+    var index = this._canvases.indexOf(canvas);
+    if (index > -1) {
+        this._canvases.splice(index, 1);
+    }
+    console.log("Unregister", canvas);
+}
 
 
 /* Event loop */
