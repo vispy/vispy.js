@@ -493,15 +493,13 @@ function init_app(c) {
 
 
 /* Creation of vispy.events */
-define(["screenfull"], function() {
-    var events = function() {
-        // Constructor.
+var events = function() {
+    // Constructor.
 
-    };
+};
 
-    events.prototype.init = function(c) {
-        init_app(c);
-    };
+events.prototype.init = function(c) {
+    init_app(c);
+};
 
-    return new events();
-});
+module.exports = new events();
