@@ -2,23 +2,12 @@
 <head>
 <link rel="stylesheet" href="scripts/lib/jquery-ui/jquery-ui.min.css">
 <!--
-Vispy.js requires jQuery, jQueryUI, jQuery mousewheel plugin.
+Vispy.js requires jQuery & jQueryUI.
 -->
 <script src="scripts/lib/jquery.min.js"></script>
 <script src="scripts/lib/jquery-ui/jquery-ui.min.js"></script>
-<!-- <script src="scripts/lib/jquery.mousewheel.min.js"></script> -->
-
-<!-- <script src="scripts/lib/require.js"></script> -->
 <script src="dist/vispy.min.js"></script>
-
-<!-- <script data-main="scripts/vispy" src="scripts/lib/require.js"></script> -->
-
 <script>
-
-// VISPY_DEBUG enables debug logging and disables the GLIR deferred mode.
-VISPY_DEBUG = false;
-
-// var vispy = new Vispy();
 
 function initialize_canvas(canvas_id) {
     var c = vispy.init(canvas_id);

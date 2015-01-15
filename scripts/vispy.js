@@ -11,6 +11,7 @@ var Vispy = function() {
     // Constructor of the Vispy library.
     this.events = events;
     this.gloo = gloo;
+    this._is_loop_running = false;
 
     // List of canvases on the page.
     this._canvases = [];
@@ -44,6 +45,10 @@ Vispy.prototype.init = function(canvas_id) {
 
 /* Event loop */
 Vispy.prototype.start_event_loop = function() {
+
+    // Do not start the event loop twice.
+    if (this._is_loop_running) return;
+
     window.requestAnimFrame = (function(){
           return  window.requestAnimationFrame       ||
                   window.webkitRequestAnimationFrame ||
@@ -68,10 +73,15 @@ Vispy.prototype.start_event_loop = function() {
             throw (err);
         }
     })();
+
+    this._is_loop_running = true
+    console.debug("Event loop started.");
 };
 
 Vispy.prototype.stop_event_loop = function() {
     window.cancelAnimationFrame(this._request_id);
+    this._is_loop_running = false;
+    console.debug("Event loop stopped.");
 };
 
 

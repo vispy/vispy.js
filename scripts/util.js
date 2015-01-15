@@ -52,9 +52,9 @@ if (typeof String.prototype.startsWith != 'function') {
   };
 }
 
-var VISPY_DEBUG = false;
+window.VISPY_DEBUG = false;
 function debug(msg) {
-    if (VISPY_DEBUG){
+    if (window.VISPY_DEBUG){
         console.debug(msg);
     }
 }
