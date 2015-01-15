@@ -4,7 +4,7 @@ function init_webgl(c) {
     // Get the DOM object, not the jQuery one.
     var canvas = c.$el.get(0);
     c.gl = canvas.getContext("webgl") ||
-            canvas.getContext("experimental-webgl");
+           canvas.getContext("experimental-webgl");
 }
 
 
