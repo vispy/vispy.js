@@ -45,7 +45,7 @@ Vispy.prototype.init = function(canvas_id) {
 Vispy.prototype.register = function(canvas) {
     /* Register a canvas. */
     this._canvases.push(canvas);
-    console.log("Register", canvas);
+    // console.debug("Register canvas", canvas);
 };
 
 Vispy.prototype.unregister = function(canvas) {
@@ -54,7 +54,7 @@ Vispy.prototype.unregister = function(canvas) {
     if (index > -1) {
         this._canvases.splice(index, 1);
     }
-    console.log("Unregister", canvas);
+    // console.debug("Unregister canvas", canvas);
 }
 
 
