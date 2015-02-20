@@ -1,0 +1,33 @@
+{
+  "name": "vispy.js",
+  "version": "1.0.0",
+  "description": "Vispy WebGL backend",
+  "main": "script/vispy.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/vispy/vispy.js"
+  },
+  "keywords": [
+    "vispy",
+    "webgl",
+    "js",
+    "3d",
+    "opengl"
+  ],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/vispy/vispy.js/issues"
+  },
+  "homepage": "https://github.com/vispy/vispy.js",
+  "dependencies": {
+    "browserify": "^8.1.3",
+    "gulp": "^3.8.11",
+    "gulp-jshint": "^1.9.2",
+    "uglify-js": "^2.4.16",
+    "watchify": "^2.3.0"
+  }
+}
