@@ -1,17 +1,23 @@
 var gulp = require('gulp'),
     gutil = require('gulp-util'),
     jshint = require('gulp-jshint'),
-
     source = require('vinyl-source-stream'),
+    buffer = require('vinyl-buffer'),
     watchify = require('watchify'),
     browserify = require('browserify'),
-
+    sourcemaps = require('gulp-sourcemaps'),
     path = require('path'),
+    uglify = require('gulp-uglify'),
 
     index = './scripts/vispy.js',
     outdir = './dist/',
     bundle = 'vispy.js',
-    outfile = 'vispy.js';
+    outfile = 'vispy.min.js';
+
+var srcs = [
+            './scripts/**/*.js',
+            'gulpfile.js'
+           ];
 
 function rebundle(file) {
     if (file) {
@@ -22,12 +28,17 @@ function rebundle(file) {
         // log errors if they happen
         .on('error', gutil.log.bind(gutil, 'Browserify Error'))
         .pipe(source(outfile))
-        .pipe(gulp.dest(outdir));
+        .pipe(buffer())
+        .pipe(sourcemaps.init({loadMaps:true, debug:true}))
+        .pipe(uglify())
+        .pipe(sourcemaps.write('./'))
+        .pipe(gulp.dest(outdir))
 }
 
 function createBundler(args) {
     args = args || {};
     args.standalone = bundle;
+    args.debug = true; //let browserify generate sourcemap.
 
     return browserify(index, args);
 }
@@ -55,13 +66,16 @@ gulp.task('build', function () {
  * JSHint task, lints the lib and test *.js files.
  *****/
 gulp.task('jshint', function () {
-    return gulp.src([
-            './scripts/**/*.js',
-            'gulpfile.js'
-        ])
+    return gulp.src(srcs)
         .pipe(jshint())
         .pipe(jshint.reporter('jshint-summary'));
 });
+
+
+// gulp.task('compress', ['build'], function() {
+//   gulp.src(outdir + outfile)
+//     .pipe(gulp.dest(outdir))
+// });
 
 /*****
  * Base task
