@@ -25,11 +25,10 @@ function rebundle(file) {
     }
 
     return this.bundle()
-        // log errors if they happen
-        .on('error', gutil.log.bind(gutil, 'Browserify Error'))
+        .on('error', gutil.log.bind(gutil, 'Browserify Error'))         // log errors if they happen
         .pipe(source(outfile))
         .pipe(buffer())
-        .pipe(sourcemaps.init({loadMaps:true, debug:true}))
+        .pipe(sourcemaps.init({loadMaps:true, debug:true}))             // init source map
         .pipe(uglify())
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(outdir))
@@ -38,7 +37,7 @@ function rebundle(file) {
 function createBundler(args) {
     args = args || {};
     args.standalone = bundle;
-    args.debug = true; //let browserify generate sourcemap.
+    args.debug = true; //let browserify generate sourcemap. (will be inlined, loaded in sourcemaps, then removed by uglify, and finally generated in .map by sourcemaps)
 
     return browserify(index, args);
 }
