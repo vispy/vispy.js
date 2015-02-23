@@ -17,4 +17,10 @@ Install dependencies with npm:
 
 Run gulp to build the Javascript bundle:
 
-    ./node_modules/.bin/glup
+    ./node_modules/.bin/gulp
+
+
+## Develop mode
+Run gulp to autorebuild when a file change:
+
+    ./node_modules/.bin/gulp dev
