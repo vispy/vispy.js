@@ -8,11 +8,12 @@ var gulp = require('gulp'),
     sourcemaps = require('gulp-sourcemaps'),
     path = require('path'),
     uglify = require('gulp-uglify'),
+    rename = require("gulp-rename"),
 
     index = './scripts/vispy.js',
     outdir = './dist/',
-    bundle = 'vispy.js',
-    outfile = 'vispy.min.js';
+    bundle = 'vispy',
+    outfile = 'vispy.js';
 
 var srcs = [
             './scripts/**/*.js',
@@ -29,9 +30,11 @@ function rebundle(file) {
         .pipe(source(outfile))
         .pipe(buffer())
         .pipe(sourcemaps.init({loadMaps:true, debug:true}))             // init source map
+        .pipe(gulp.dest(outdir)) //generate the non-minified
+        .pipe(rename({extname:'.min.js'}))
         .pipe(uglify())
         .pipe(sourcemaps.write('./'))
-        .pipe(gulp.dest(outdir))
+        .pipe(gulp.dest(outdir));
 }
 
 function createBundler(args) {
