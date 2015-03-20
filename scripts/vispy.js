@@ -100,4 +100,4 @@ Vispy.prototype.stop_event_loop = function() {
 };
 
 
-global.vispy = new Vispy();
+module.exports = new Vispy();
