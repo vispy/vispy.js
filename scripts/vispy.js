@@ -1,18 +1,16 @@
 var screenful = require("./lib/screenfull.min.js");
-var jquerymousewheel = require("./lib/jquery.mousewheel.min.js");
 var VispyCanvas = require('./vispycanvas.js');
 var gloo = require('./gloo.js');
 var events = require('./events.js');
 var util = require('./util.js');
 var data = require('./data.js');
-
+require("./lib/jquery.mousewheel.min.js")($);
 
 var Vispy = function() {
     // Constructor of the Vispy library.
     this.events = events;
     this.gloo = gloo;
     this._is_loop_running = false;
-
     // List of canvases on the page.
     this._canvases = [];
 };
