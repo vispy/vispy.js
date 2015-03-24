@@ -29,9 +29,9 @@ function rebundle(file) {
         .on('error', gutil.log.bind(gutil, 'Browserify Error'))         // log errors if they happen
         .pipe(source(outfile))
         .pipe(buffer())
-        .pipe(sourcemaps.init({loadMaps:true, debug:true}))             // init source map
         .pipe(gulp.dest(outdir)) //generate the non-minified
         .pipe(rename({extname:'.min.js'}))
+        .pipe(sourcemaps.init({loadMaps:true, debug:true}))             // init source map
         .pipe(uglify())
         .pipe(sourcemaps.write('./'))
         .pipe(gulp.dest(outdir));
