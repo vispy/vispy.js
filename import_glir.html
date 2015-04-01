@@ -12,57 +12,9 @@ Vispy.js requires jQuery & jQueryUI.
 <script src="dist/vispy.min.js"></script>
 <script>
 
-function initialize_canvas(canvas_id) {
-    var c = vispy.init(canvas_id);
-
-    // Initialize the scene.
-    c.on_initialize(function(event) {
-    });
-
-    c.on_key_press(function(event) {
-        console.log(event);
-    });
-
-//    c.on_load(function(event) {
-  //  });
-
-
-    c.initialize();
-//    c.resize();  // resize triggers an paint event.
-
-    // Toggle comments below to have the canvas span the entire window.
-    // Also, need to set #mycanvas width and height to 100% in the CSS.
-//    c.resizable();
-    // window.onresize = function(event) {
-    //     c.resize();
-    // };
-
-    return c;
-
-}
-
-
-$(document).ready(function() {
-
-    var c = initialize_canvas("#mycanvas");
-    initialize_canvas("#mycanvas2");
-
-    // Toggle fullscreen for the canvas when 'f' is pressed.
-    $(window).keypress(function(e) {
-        if (String.fromCharCode(e.which) == 'f') {
-            // c.$el.width("100%").height("100%");
-            c.toggle_fullscreen();
-        }
-    });
-
-    // Start the event loop using requestanimationframe() (HTML5 spec).
-    vispy.start_event_loop();
-
-});
-
 </script>
 <style>
-#mycanvas, #mycanvas2 {
+#mycanvas {
     /*width: 100%;*/
     /*height: 100%;*/
     width: 200px;
@@ -76,7 +28,6 @@ $(document).ready(function() {
 <body>
 
 <canvas id="mycanvas"></canvas>
-<canvas id="mycanvas2"></canvas>
 
 <form id="jsonFile" name="jsonFile" enctype="multipart/form-data" method="post">
 
@@ -117,9 +68,33 @@ $(document).ready(function() {
     function receivedText(e) {
       lines = e.target.result;
       var newArr = JSON.parse(lines);
-      console.log(newArr);       
+//      console.log(newArr);       
 
-      // Cyrille: At this point, we have the commands in newArr and need to get them to the canvas.
+
+      var c = vispy.init("#mycanvas");
+
+        c.on_initialize(function(event) {
+
+        this.command(newArr[0]);
+        console.log(newArr[0]);
+
+        this.command(["FUNC", "glClearColor", 0, 0, 0, 1]);
+        console.log(newArr[1]);
+
+//        this.command(newArr[1]);
+  //      console.log(newArr[1]);
+
+//        for (var i = 0; i < 4; i++) {
+  //      }
+
+
+            // ... TODO: loop over all commands and call this:
+//            this.command(['MYGLIRCOMMAND', arg1, arg2...]);
+        });
+
+
+        c.initialize();
+        vispy.start_event_loop();
     }
   }
 </script>
