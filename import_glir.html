@@ -17,8 +17,8 @@ Vispy.js requires jQuery & jQueryUI.
 #mycanvas {
     /*width: 100%;*/
     /*height: 100%;*/
-    width: 200px;
-    height: 50px;
+    width: 400px;
+    height: 100px;
     margin: 10px 0;
     padding: 0;
     cursor: default;
@@ -75,11 +75,10 @@ Vispy.js requires jQuery & jQueryUI.
 
         c.on_initialize(function(event) {
 
-        this.command(newArr[0]);
-        console.log(newArr[0]);
-
-        this.command(["FUNC", "glClearColor", 0, 0, 0, 1]);
-        console.log(newArr[1]);
+        for (var i = 0; i < 19; i++) {
+            this.command(newArr[i]);
+            console.log(newArr[i]);
+        }
 
 //        this.command(newArr[1]);
   //      console.log(newArr[1]);
