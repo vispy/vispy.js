@@ -51,7 +51,6 @@ function to_array_buffer(data) {
         return contents.buffer;
     }
     else if (storage_type == "base64") {
-        console.log(data_type);
         var array = decode_base64(contents);
         return array;
     }
