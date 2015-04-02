@@ -22,7 +22,6 @@ var _typed_array_map = {
 
 
 function to_array_buffer(data) {
-
     // Return a TypedArray from a JSON object describing a data buffer.
     // storage_type is one of 'javascript_array', 'javascript_typed_array',
     // 'base64', 'png'

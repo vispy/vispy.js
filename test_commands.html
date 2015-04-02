@@ -1,0 +1,56 @@
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<meta content="utf-8" http-equiv="encoding">
+
+<html>
+<head>
+<link rel="stylesheet" href="scripts/lib/jquery-ui/jquery-ui.min.css">
+<!--
+Vispy.js requires jQuery & jQueryUI.
+-->
+<script src="scripts/lib/jquery.min.js"></script>
+<script src="scripts/lib/jquery-ui/jquery-ui.min.js"></script>
+<script src="dist/vispy.min.js"></script>
+
+<script type="text/javascript">
+$("document").ready(function() {
+  $("#browse_button").change(function(e) {
+    var r = new FileReader();
+    r.onload = function(e) {
+      var commands = JSON.parse(e.target.result);
+
+      var c = vispy.init("#mycanvas");
+      c.on_initialize(function(e) {
+        for (var i = 0; i < commands.length; i++) {
+          this.command(commands[i]);
+        }
+      });
+
+      c.on_paint(function(e) {
+      });
+
+      c.initialize();
+      c.resize();
+      vispy.start_event_loop();
+    };
+
+    r.readAsText(this.files[0]);
+  });
+});
+</script>
+
+<style>
+#mycanvas {
+    width: 100%;
+    height: 100%;
+    margin: 10px 0;
+    padding: 0;
+    cursor: default;
+}
+</style>
+</head>
+
+<body>
+<input type='file' id='browse_button'>
+<canvas id="mycanvas"></canvas>
+</body>
+</html>
