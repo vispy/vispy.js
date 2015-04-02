@@ -22,7 +22,6 @@ var _typed_array_map = {
 
 
 function to_array_buffer(data) {
-
     // Return a TypedArray from a JSON object describing a data buffer.
     // storage_type is one of 'javascript_array', 'javascript_typed_array',
     // 'base64', 'png'
@@ -52,6 +51,7 @@ function to_array_buffer(data) {
         return contents.buffer;
     }
     else if (storage_type == "base64") {
+        console.log(data_type);
         var array = decode_base64(contents);
         return array;
     }

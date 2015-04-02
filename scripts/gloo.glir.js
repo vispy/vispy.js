@@ -110,14 +110,18 @@ function set_buffer_data(c, object_handle, gl_type, offset, array, reuse) {
 }
 
 function set_uniform(c, uniform_handle, uniform_function, value) {
+    console.log("set_uniform");
+
     // Get a TypedArray.
     array = to_array_buffer(value);
 
     if (uniform_function.indexOf('Matrix') > 0) {
+//        console.log("matrix uniform");
         // Matrix uniforms.
         c.gl[uniform_function](uniform_handle, false, array);
     }
     else {
+  //      console.log("scalar uniform");
         // Scalar uniforms.
         c.gl[uniform_function](uniform_handle, array);
     }

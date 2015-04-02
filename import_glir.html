@@ -17,8 +17,8 @@ Vispy.js requires jQuery & jQueryUI.
 #mycanvas {
     /*width: 100%;*/
     /*height: 100%;*/
-    width: 400px;
-    height: 100px;
+    width: 800px;
+    height: 600px;
     margin: 10px 0;
     padding: 0;
     cursor: default;
@@ -75,7 +75,7 @@ Vispy.js requires jQuery & jQueryUI.
 
         c.on_initialize(function(event) {
 
-        for (var i = 0; i < 19; i++) {
+        for (var i = 0; i < newArr.length; i++) {
             this.command(newArr[i]);
             console.log(newArr[i]);
         }
