@@ -21,6 +21,6 @@ Run gulp to build the Javascript bundle:
 
 
 ## Develop mode
-Run gulp to autorebuild when a file change:
+Run gulp to autorebuild when a file changes:
 
     ./node_modules/.bin/gulp dev
