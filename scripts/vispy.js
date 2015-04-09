@@ -19,12 +19,7 @@ var Vispy = function() {
 
 Vispy.prototype.init = function(canvas_id) {
     var canvas_el;
-    if (typeof canvas_id === 'string') {
-        canvas_el = $(canvas_id);
-    }
-    else {
-        canvas_el = canvas_id;
-    }
+    canvas_el = $(canvas_id);
     // Initialize the canvas.
     var canvas = new VispyCanvas(canvas_el);
 
