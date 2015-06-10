@@ -546,9 +546,8 @@
         }
         alignment = this._get_alignment((shape[shape.length -2]) * (shape[shape.length -1]));
         if (alignment != 4) {
-            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment);
+            this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, alignment);
         }
-        this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, 1);
         this._gl.texSubImage2D(this._target, 0, x, y, width, height, format, gtype, data);
         if (alignment != 4) {
             this._gl.pixelStorei(this._gl.UNPACK_ALIGNMENT, 4);

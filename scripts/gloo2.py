@@ -455,8 +455,7 @@ class Texture2D(GlooObject):
         # Set alignment (width is nbytes_per_pixel * npixels_per_line)
         alignment = self._get_alignment(shape[-2]*shape[-1])
         if alignment != 4:
-            gl.glPixelStorei(gl.GL_UNPACK_ALIGNMENT, alignment)
-        self._gl.pixelStorei(self._gl.UNPACK_ALIGNMENT, 1)
+            self._gl.pixelStorei(self._gl.UNPACK_ALIGNMENT, alignment)
         # Upload
         self._gl.texSubImage2D(self._target, 0, x, y, width, height, 
                                format, gtype, data)
