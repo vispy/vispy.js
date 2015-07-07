@@ -68,6 +68,13 @@ class Program(GlooObject):
         'sampler3D': 'uniform1i',
     }
     
+    ATYPEMAP = {
+        'float': 'vertexAttrib1f',
+        'vec2': 'vertexAttrib2f',
+        'vec3': 'vertexAttrib3f',
+        'vec4': 'vertexAttrib4f',
+    }
+    
     ATYPEINFO = {
         'float': (1, 5126) ,
         'vec2': (2, 5126),
@@ -234,8 +241,10 @@ class Program(GlooObject):
         self._gl[funcname](handle, value)
     
     # todo: Better api
-    def set_attribute(self, name, type_, value):
-        """ Set an attribute value. Value is assumed to have been checked.
+    def set_attribute(self, name, type_, vbo_info, value=None):
+        """ Set an attribute value. vbo_info is (vbo, stride, offset).
+        It can also be null, in which case value must be an array with
+        the actual values to apply to all vertices (as in a uniform).
         """
         if not self._linked:
             raise RuntimeError('Cannot set attribute when program has no code')
@@ -251,21 +260,22 @@ class Program(GlooObject):
             self._handles[name] = handle  # Store in cache
             if handle < 0:
                 self._known_invalid.append(name)
-                if value[0] != 0 and value[2] > 0:  # VBO with offset
+                if vbo_info and vbo_info[0] != 0 and vbo_info[2] > 0:
+                    # VBO with offset
                     return  # Probably an unused element in a structured VBO
                 print('Variable %s is not an active attribute' % name)
                 return
         # Program needs to be active in order to set uniforms
         self.activate()
         # Triage depending on VBO or tuple data
-        if value[0] == 0:
+        if vbo_info is None:
             # Look up function call
             funcname = self.ATYPEMAP[type_]
             # Set data
-            self._attributes[name] = 0, handle, funcname, value[1:]
+            self._attributes[name] = 0, handle, funcname, value
         else:
             # Get meta data
-            vbo, stride, offset = value
+            vbo, stride, offset = vbo_info
             size, gtype = self.ATYPEINFO[type_]
             # Set data
             funcname = 'vertexAttribPointer'
@@ -287,7 +297,7 @@ class Program(GlooObject):
                 self._gl.enableVertexAttribArray(attr_handle)
                 self._gl[funcname](attr_handle, *args)
             else:
-                self._gl.bindBuffer(self._gl.ARRAY_BUFFER, 0)
+                self._gl.bindBuffer(self._gl.ARRAY_BUFFER, None)
                 self._gl.disableVertexAttribArray(attr_handle)
                 self._gl[funcname](attr_handle, *args)
         # Validate. We need to validate after textures units get assigned
@@ -316,15 +326,13 @@ class Program(GlooObject):
         # Init
         check_error(self._gl, 'before draw')
         # Draw
-        if len(selection) == 3:
-            # Selection based on indices
-            id_, gtype, count = selection
-            if count:
-                self._pre_draw()
-                ibuf = self._gl._objects.get(id_, None)
-                ibuf.activate()
-                self._gl.drawElements(mode, count, gtype, None)
-                ibuf.deactivate()
+        if isinstance(selection, IndexBuffer):
+            self._pre_draw()
+            selection.activate()
+            count = selection._buffer_size / 2
+            gtype = self._gl.UNSIGNED_SHORT
+            self._gl.drawElements(mode, count, gtype, 0)
+            selection.deactivate()
         else:
             # Selection based on start and count
             first, count = selection
@@ -351,7 +359,7 @@ class Buffer(GlooObject):
         self._gl.bindBuffer(self._target, self._handle)
     
     def deactivate(self):
-        self._gl.bindBuffer(self._target, 0)
+        self._gl.bindBuffer(self._target, None)
     
     # todo: is this not always 32bit? for attributes yes...
     def set_size(self, nbytes):  # in bytes
@@ -365,7 +373,6 @@ class Buffer(GlooObject):
         self.activate()
         nbytes = len(data) * data.BYTES_PER_ELEMENT
         self._gl.bufferSubData(self._target, offset, data)
-
 
 class VertexBuffer(Buffer):
     _target = 34962  # ARRAY_BUFFER

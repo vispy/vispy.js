@@ -4,11 +4,12 @@
     if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define([], factory);
-    } else if (typeof window === 'undefined' && typeof exports === 'object') {
-        // Node. Does not work with strict CommonJS, but only CommonJS-like
-        // environments that support module.exports, like Node.
+    } else if (typeof exports !== 'undefined') {
+        // Node or CommonJS
         module.exports = factory();
-        root.gloo2 = module.exports;  // also create global module
+        if (typeof window === 'undefined') {
+            root.gloo2 = module.exports;  // also create global module in Node
+        }
     } else {
         // Browser globals (root is window)
         root.gloo2 = factory();
@@ -86,6 +87,7 @@
     
 
     Program.prototype.UTYPEMAP = {'float': 'uniform1fv', 'vec2': 'uniform2fv', 'vec3': 'uniform3fv', 'vec4': 'uniform4fv', 'int': 'uniform1iv', 'ivec2': 'uniform2iv', 'ivec3': 'uniform3iv', 'ivec4': 'uniform4iv', 'bool': 'uniform1iv', 'bvec2': 'uniform2iv', 'bvec3': 'uniform3iv', 'bvec4': 'uniform4iv', 'mat2': 'uniformMatrix2fv', 'mat3': 'uniformMatrix3fv', 'mat4': 'uniformMatrix4fv', 'sampler1D': 'uniform1i', 'sampler2D': 'uniform1i', 'sampler3D': 'uniform1i'};
+    Program.prototype.ATYPEMAP = {'float': 'vertexAttrib1f', 'vec2': 'vertexAttrib2f', 'vec3': 'vertexAttrib3f', 'vec4': 'vertexAttrib4f'};
     Program.prototype.ATYPEINFO = {'float': [1, 5126], 'vec2': [2, 5126], 'vec3': [3, 5126], 'vec4': [4, 5126]};
     Program.prototype._create = function () {
         this._handle = this._gl.createProgram();
@@ -275,9 +277,12 @@
         (this._gl[funcname])(handle, value);
     };
 
-    Program.prototype.set_attribute = function (name, type_, value) {
+    Program.prototype.set_attribute = function (name, type_, vbo_info, value) {
         var args, dummy24_, dummy25_, dummy26_, dummy27_, dummy28_, err_3, funcname, gtype, handle, offset, size, stride, vbo;
-        // Set an attribute value. Value is assumed to have been checked.
+        value = (value === undefined) ? null: value;
+        // Set an attribute value. vbo_info is (vbo, stride, offset).
+        // It can also be null, in which case value must be an array with
+        // the actual values to apply to all vertices (as in a uniform).
         if (!this._linked) {
             err_3 = new Error('RuntimeError:' + 'Cannot set attribute when program has no code'); err_3.name = "RuntimeError"; throw err_3;
         }
@@ -293,7 +298,7 @@
             this._handles[name] = handle;
             if (handle < 0) {
                 (this._known_invalid.append || this._known_invalid.push).apply(this._known_invalid, [name]);
-                if (((value[0]) != 0) && ((value[2]) > 0)) {
+                if (vbo_info && ((vbo_info[0]) != 0) && ((vbo_info[2]) > 0)) {
                     return;
                 }
                 console.log(('Variable ' + name + ' is not an active attribute'));
@@ -301,11 +306,11 @@
             }
         }
         this.activate();
-        if ((value[0]) == 0) {
+        if (vbo_info === null) {
             funcname = this.ATYPEMAP[type_];
-            this._attributes[name] = [0, handle, funcname, value.slice(1)];
+            this._attributes[name] = [0, handle, funcname, value];
         } else {
-            dummy27_ = value;
+            dummy27_ = vbo_info;
             vbo = dummy27_[0];stride = dummy27_[1];offset = dummy27_[2];
             dummy28_ = this.ATYPEINFO[type_];
             size = dummy28_[0];gtype = dummy28_[1];
@@ -338,7 +343,7 @@
                 this._gl.enableVertexAttribArray(attr_handle);
                 (this._gl[funcname]).apply(this._gl, [attr_handle].concat(args));
             } else {
-                this._gl.bindBuffer(this._gl.ARRAY_BUFFER, 0);
+                this._gl.bindBuffer(this._gl.ARRAY_BUFFER, null);
                 this._gl.disableVertexAttribArray(attr_handle);
                 (this._gl[funcname]).apply(this._gl, [attr_handle].concat(args));
             }
@@ -362,26 +367,23 @@
     };
 
     Program.prototype.draw = function (mode, selection) {
-        var count, dummy33_, dummy34_, dummy35_, e, err_3, first, gtype, ibuf, id_;
+        var count, dummy33_, e, err_3, first, gtype;
         // Draw program in given mode, with given selection (IndexBuffer or
         // first, count).
         if (!this._linked) {
             err_3 = new Error('RuntimeError:' + 'Cannot draw program if code has not been set'); err_3.name = "RuntimeError"; throw err_3;
         }
         check_error(this._gl, 'before draw');
-        if (selection.length == 3) {
-            dummy33_ = selection;
-            id_ = dummy33_[0];gtype = dummy33_[1];count = dummy33_[2];
-            if (count) {
-                this._pre_draw();
-                ibuf = (/*py-dict.get*/typeof (dummy34_=this._gl._objects).get==="function" ? dummy34_.get(id_, null) : (dummy34_[id_] || null));
-                ibuf.activate();
-                this._gl.drawElements(mode, count, gtype, null);
-                ibuf.deactivate();
-            }
+        if (selection instanceof IndexBuffer) {
+            this._pre_draw();
+            selection.activate();
+            count = selection._buffer_size / 2;
+            gtype = this._gl.UNSIGNED_SHORT;
+            this._gl.drawElements(mode, count, gtype, 0);
+            selection.deactivate();
         } else {
-            dummy35_ = selection;
-            first = dummy35_[0];count = dummy35_[1];
+            dummy33_ = selection;
+            first = dummy33_[0];count = dummy33_[1];
             if (count) {
                 this._pre_draw();
                 this._gl.drawArrays(mode, first, count);
@@ -417,7 +419,7 @@
     };
 
     Buffer.prototype.deactivate = function () {
-        this._gl.bindBuffer(this._target, 0);
+        this._gl.bindBuffer(this._target, null);
     };
 
     Buffer.prototype.set_size = function (nbytes) {
@@ -487,7 +489,7 @@
     };
 
     Texture2D.prototype._get_alignment = function (width) {
-        var alignment, alignments, dummy36_sequence, dummy37_iter, dummy38_length;
+        var alignment, alignments, dummy34_sequence, dummy35_iter, dummy36_length;
         // Determines a textures byte alignment.
         // 
         //         If the width isn't a power of 2
@@ -496,13 +498,13 @@
         // 
         //         www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
         alignments = [4, 8, 2, 1];
-        dummy36_sequence = alignments;
-        if ((typeof dummy36_sequence === "object") && (!Array.isArray(dummy36_sequence))) {
-            dummy36_sequence = Object.keys(dummy36_sequence);
+        dummy34_sequence = alignments;
+        if ((typeof dummy34_sequence === "object") && (!Array.isArray(dummy34_sequence))) {
+            dummy34_sequence = Object.keys(dummy34_sequence);
         }
-        dummy38_length = dummy36_sequence.length;
-        for (dummy37_iter = 0; dummy37_iter < dummy38_length; dummy37_iter += 1) {
-            alignment = dummy36_sequence[dummy37_iter];
+        dummy36_length = dummy34_sequence.length;
+        for (dummy35_iter = 0; dummy35_iter < dummy36_length; dummy35_iter += 1) {
+            alignment = dummy34_sequence[dummy35_iter];
             if ((width % alignment) == 0) {
                 return alignment;
             }
@@ -522,9 +524,9 @@
     };
 
     Texture2D.prototype.set_size = function (shape, format) {
-        var dummy39_, height, width;
-        dummy39_ = shape;
-        height = dummy39_[0];width = dummy39_[1];
+        var dummy37_, height, width;
+        dummy37_ = shape;
+        height = dummy37_[0];width = dummy37_[1];
         if (([height, width, format]) != this._shape_format) {
             this._shape_format = [height, width, format];
             this.activate();
@@ -533,14 +535,14 @@
     };
 
     Texture2D.prototype.set_data = function (offset, shape, data) {
-        var alignment, dummy40_, dummy41_, dummy42_, err_3, format, gtype, height, width, x, y;
+        var alignment, dummy38_, dummy39_, dummy40_, err_3, format, gtype, height, width, x, y;
         this.activate();
         format = this._shape_format[2];
-        dummy40_ = shape;
-        height = dummy40_[0];width = dummy40_[1];
-        dummy41_ = offset;
-        y = dummy41_[0];x = dummy41_[1];
-        gtype = (/*py-dict.get*/typeof (dummy42_=this._types).get==="function" ? dummy42_.get(data.constructor.name, null) : (dummy42_[data.constructor.name] || null));
+        dummy38_ = shape;
+        height = dummy38_[0];width = dummy38_[1];
+        dummy39_ = offset;
+        y = dummy39_[0];x = dummy39_[1];
+        gtype = (/*py-dict.get*/typeof (dummy40_=this._types).get==="function" ? dummy40_.get(data.constructor.name, null) : (dummy40_[data.constructor.name] || null));
         if (gtype === null) {
             err_3 = new Error('ValueError:' + ('Type ' + data.constructor.name + ' not allowed for texture')); err_3.name = "ValueError"; throw err_3;
         }
