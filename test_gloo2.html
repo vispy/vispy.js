@@ -1,0 +1,102 @@
+<html>
+<head>
+    <meta charset="utf-8">
+</head>
+
+<script src="scripts/gloo2.js"></script>
+<script>
+
+console.log(window);
+
+function initialize_canvas(canvas_id) {
+    
+    VERT = 'precision mediump float;\
+        attribute float a_x;\
+        attribute float a_y;\
+        varying vec2 v_texcoord;\
+        void main() {\
+            vec2 pos = vec2(a_x, a_y);\
+            gl_Position = vec4(pos*2.0-1.0, 0.0, 1.0);\
+            v_texcoord = pos;\
+        }';
+    FRAG = 'precision mediump float;\
+        uniform vec4 u_color;\
+        uniform sampler2D u_tex;\
+        varying vec2 v_texcoord;\
+        void main() {\
+            gl_FragColor = u_color;\
+            gl_FragColor *= texture2D(u_tex, vec2(v_texcoord));\
+            gl_FragColor.a = 1.0;\
+        }';
+    
+    X = new Float32Array([0.1, 0.2, 0.4, 0.6, 0.8, 0.9]);
+    Y = new Float32Array([0.5, 0.1, 0.8, 0.9, 0.7, 0.3]);
+    im = new Uint8Array([100, 150, 100, 150, 200, 150, 200, 250, 200]);
+    
+    
+    var e = document.getElementById(canvas_id);
+    var gl = e.getContext('webgl');
+    window.gl = gl;
+    
+    var prog = new gloo2.Program(gl);
+    prog.set_shaders(VERT, FRAG);
+    window.t = prog;
+    
+    var vbox = new gloo2.VertexBuffer(gl);
+    var vboy = new gloo2.VertexBuffer(gl);
+    vbox.set_size(X.length * 4);
+    vboy.set_size(X.length * 4);
+    vbox.set_data(0, X);
+    vboy.set_data(0, Y);
+    
+    prog.set_attribute('a_x', 'float', [vbox, 0, 0]);
+    prog.set_attribute('a_y', 'float', [vboy, 0, 0]);
+    
+    var tex = new gloo2.Texture2D(gl);
+    tex.set_interpolation(gl.LINEAR, gl.LINEAR);
+    tex.set_wrapping(gl.CLAMP_TO_EDGE, gl.CLAMP_TO_EDGE);
+    tex.set_size([3, 3], gl.LUMINANCE);
+    tex.set_data([0, 0], [3, 3], im);
+    prog.set_texture('u_tex', tex);
+    
+    
+    var draw = function () {
+        gl.viewport(0, 0, e.width, e.height);
+        gl.clearColor(1, 1, 0, 1);
+        prog.set_uniform('u_color', 'vec4', [0, 1, 0, 1])
+        gl.clear(gl.COLOR_BUFFER_BIT);
+        gl.lineWidth(2);
+        prog.draw(gl.LINE_STRIP, [0, X.length]);
+    };
+    return draw;
+    
+}
+
+
+window.onload = function() {
+    var draw = initialize_canvas("mycanvas");
+    
+    function render (timestamp) {
+        draw();
+        window.requestAnimationFrame(render);
+    }
+    window.requestAnimationFrame(render);
+};
+
+</script>
+<style>
+#mycanvas, #mycanvas2 {
+    /*width: 100%;*/
+    /*height: 100%;*/
+    width: 800px;
+    height: 400px;
+    margin: 10px 0;
+    padding: 0;
+    cursor: default;
+}
+</style>
+</head>
+<body>
+<canvas width=800, height=400 id="mycanvas"></canvas>
+</body>
+</html>
