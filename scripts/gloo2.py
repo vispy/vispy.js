@@ -82,7 +82,7 @@ class Program(GlooObject):
     
     def _create(self):
         self.handle = self._gl.createProgram()
-        self.handles = []
+        self.locations = {}
         self._unset_variables = []
         self._validated = False
         self._samplers = {}  # name -> (tex-target, tex-handle, unit)
@@ -138,17 +138,16 @@ class Program(GlooObject):
         if not gl.getProgramParameter(self.handle, gl.LINK_STATUS):
             raise RuntimeError("Program link error:\n" + 
                                gl.getProgramInfoLog(self.handle))
-
-        # Now we can remove the shaders. We no longer need them and it
-        # frees up precious GPU memory:
-        # http://gamedev.stackexchange.com/questions/47910
+        # Now we know what variables will be used by the program. Do *before* 
+        # cleanup, otherwise https://github.com/bokeh/bokeh/issues/2683
+        self._unset_variables = self._get_active_attributes_and_uniforms()
+        # Now we can remove the shaders. We no longer need them and it frees up
+        # precious GPU memory:http://gamedev.stackexchange.com/questions/47910
         gl.detachShader(self.handle, vert_handle)
         gl.detachShader(self.handle, frag_handle)
         gl.deleteShader(vert_handle)
         gl.deleteShader(frag_handle)
-        # Now we know what variables will be used by the program
-        self._unset_variables = self._get_active_attributes_and_uniforms()
-        self.handles = {}
+        # Set / reset
         self._known_invalid = []
         self._linked = True
     
@@ -158,6 +157,7 @@ class Program(GlooObject):
         all uniforms/attributes are set by the user.
         """
         gl = self._gl
+        self.locations = {}
         # This match a name of the form "name[size]" (= array)
         regex = window.RegExp("""(\w+)\s*(\[(\d+)\])\s*""")
         # Get how many active attributes and uniforms there are
@@ -166,11 +166,11 @@ class Program(GlooObject):
         # Get info on each one
         attributes = []
         uniforms = []
-        for x in [(attributes, ca, gl.getActiveAttrib),
-                  (uniforms, cu, gl.getActiveUniform)]:
-            container, count, func = x
+        for x in [(attributes, ca, gl.getActiveAttrib, gl.getAttribLocation),
+                  (uniforms, cu, gl.getActiveUniform, gl.getUniformLocation)]:
+            container, count, getActive, getLocation = x
             for i in range(count):
-                info = func.call(gl, self.handle, i)
+                info = getActive.call(gl, self.handle, i)
                 name = info.name
                 m = name.match(regex)  # Check if xxx[0] instead of xx
                 if m:
@@ -179,6 +179,7 @@ class Program(GlooObject):
                         container.append(('%s[%d]' % (name, i), info.type))
                 else:
                     container.append((name, info.type))
+                self.locations[name] = getLocation.call(gl, self.handle, name)
         return [v[0] for v in attributes] + [v[0] for v in uniforms]
     
     def set_texture(self, name, value):
@@ -197,19 +198,16 @@ class Program(GlooObject):
         """
         if not self._linked:
             raise RuntimeError('Cannot set uniform when program has no code')
-        # Get handle for the uniform, first try cache
-        handle = self.handles.get(name, -1)
+        # Get handle for the uniform
+        handle = self.locations.get(name, -1)
         if handle < 0:
-            if name in self._known_invalid:
-                return
-            handle = self._gl.getUniformLocation(self.handle, name)
-            if name in self._unset_variables:
-                self._unset_variables.remove(name)  # Mark as set
-            self.handles[name] = handle  # Store in cache
-            if handle < 0:
+            if name not in self._known_invalid:
                 self._known_invalid.append(name)
-                console.log('Variable %s is not an active uniform' % name)
-                return
+                console.log('Variable %s is not an active texture' % name)
+            return
+        # Mark as set
+        if name in self._unset_variables:
+            self._unset_variables.remove(name)
         # Program needs to be active in order to set uniforms
         self.activate()
         if True:
@@ -237,30 +235,26 @@ class Program(GlooObject):
         """
         if not self._linked:
             raise RuntimeError('Cannot set uniform when program has no code')
-        # Get handle for the uniform, first try cache
-        handle = self.handles.get(name, -1)
+        # Get handle for the uniform
+        handle = self.locations.get(name, -1)
         count = 1
         if handle < 0:
-            if name in self._known_invalid:
-                return
-            handle = self._gl.getUniformLocation(self.handle, name)
-            if name in self._unset_variables:
-                self._unset_variables.remove(name)
-            # if we set a uniform_array, mark all as set
-            if not type_.startswith('mat'):
-                a_type = {'int': 'float', 'bool': 'float'}.get(type_, type_.lstrip('ib'))
-                count = value.length // (self.ATYPEINFO[a_type][0])
-            if count > 1:
-                for ii in range(count):
-                    if '%s[%s]' % (name, ii) in self._unset_variables:
-                        name_ = '%s[%s]' % (name, ii)
-                        if name_ in self._unset_variables:
-                            self._unset_variables.remove(name_)
-            self.handles[name] = handle  # Store in cache
-            if handle < 0:
-                self._known_invalid.add(name)
+            if name not in self._known_invalid:
+                self._known_invalid.append(name)
                 console.log('Variable %s is not an active uniform' % name)
-                return
+            return
+        # Mark as set
+        if name in self._unset_variables:
+            self._unset_variables.remove(name)
+        if not type_.startswith('mat'):
+            a_type = {'int': 'float', 'bool': 'float'}.get(type_, type_.lstrip('ib'))
+            count = value.length // (self.ATYPEINFO[a_type][0])
+        if count > 1:
+            for ii in range(count):
+                if '%s[%s]' % (name, ii) in self._unset_variables:
+                    name_ = '%s[%s]' % (name, ii)
+                    if name_ in self._unset_variables:
+                        self._unset_variables.remove(name_)
         # Look up function to call
         funcname = self.UTYPEMAP[type_]
         # Program needs to be active in order to set uniforms
@@ -294,21 +288,18 @@ class Program(GlooObject):
             raise RuntimeError('Cannot set attribute when program has no code')
         
         # Get handle for the attribute, first try cache
-        handle = self.handles.get(name, -1)
+        handle = self.locations.get(name, -1)
         if handle < 0:
-            if name in self._known_invalid:
-                return
-            handle = self._gl.getAttribLocation(self.handle, name)
-            if name in self._unset_variables:
-                self._unset_variables.remove(name)  # Mark as set
-            self.handles[name] = handle  # Store in cache
-            if handle < 0:
+            if name not in self._known_invalid:
                 self._known_invalid.append(name)
                 if vbo_info and vbo_info[0] != 0 and vbo_info[2] > 0:
-                    # VBO with offset
-                    return  # Probably an unused element in a structured VBO
-                console.log('Variable %s is not an active attribute' % name)
-                return
+                    pass  # Probably an unused element in a structured VBO
+                else:
+                    console.log('Variable %s is not an active attribute' % name)
+            return
+        # Mark as set
+        if name in self._unset_variables:
+            self._unset_variables.remove(name)
         # Program needs to be active in order to set uniforms
         self.activate()
         # Triage depending on VBO or tuple data
@@ -741,4 +732,13 @@ class Texture3DLike(Texture2D):
 
 if __name__ == '__main__':
     from flexx.pyscript.functions import script2js
-    script2js(__file__, 'gloo2')
+    script2js(__file__, 'gloo2+')  # The + is makes it a UMD module
+    
+    # AK: a small hack to make it easier for me to devekop this for Bokeh
+    import os
+    if os.getenv('GLOO2_DEPLOY_BOKEH', ''):
+        import bokeh
+        bokehdir = os.path.abspath(os.path.join(bokeh.__file__, '..', '..',
+                                'bokehjs/src/vendor/gloo/'))
+        if os.path.isdir(bokehdir):
+            script2js(__file__, 'gloo2+', bokehdir + '/gloo2.js')
