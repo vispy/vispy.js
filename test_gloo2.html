@@ -20,11 +20,11 @@ function initialize_canvas(canvas_id) {
             v_texcoord = pos;\
         }';
     FRAG = 'precision mediump float;\
-        uniform vec4 u_color;\
+        uniform vec3 u_color[3];\
         uniform sampler2D u_tex;\
         varying vec2 v_texcoord;\
         void main() {\
-            gl_FragColor = u_color;\
+            gl_FragColor = vec4(u_color[2], 1.0);\
             gl_FragColor *= texture2D(u_tex, vec2(v_texcoord));\
             gl_FragColor.a = 1.0;\
         }';
@@ -49,8 +49,8 @@ function initialize_canvas(canvas_id) {
     vbox.set_data(0, X);
     vboy.set_data(0, Y);
     
-    prog.set_attribute('a_x', 'float', [vbox, 0, 0]);
-    prog.set_attribute('a_y', 'float', [vboy, 0, 0]);
+    prog.set_attribute('a_x', 'float', vbox);
+    prog.set_attribute('a_y', 'float', vboy);
     
     var tex = new gloo2.Texture2D(gl);
     tex.set_interpolation(gl.LINEAR, gl.LINEAR);
@@ -63,7 +63,7 @@ function initialize_canvas(canvas_id) {
     var draw = function () {
         gl.viewport(0, 0, e.width, e.height);
         gl.clearColor(1, 1, 0, 1);
-        prog.set_uniform('u_color', 'vec4', [0, 1, 0, 1])
+        prog.set_uniform('u_color', 'vec3', [1, 0, 0, 0, 1, 0, 0, 0, 1])
         gl.clear(gl.COLOR_BUFFER_BIT);
         gl.lineWidth(2);
         prog.draw(gl.LINE_STRIP, [0, X.length]);
