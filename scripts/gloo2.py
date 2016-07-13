@@ -159,7 +159,7 @@ class Program(GlooObject):
         gl = self._gl
         self.locations = {}
         # This match a name of the form "name[size]" (= array)
-        regex = window.RegExp("""(\w+)\s*(\[(\d+)\])\s*""")
+        regex = window.RegExp("(\\w+)\\s*(\\[(\\d+)\\])\\s*")
         # Get how many active attributes and uniforms there are
         cu = gl.getProgramParameter(self.handle, gl.ACTIVE_UNIFORMS)
         ca = gl.getProgramParameter(self.handle, gl.ACTIVE_ATTRIBUTES)
@@ -172,11 +172,13 @@ class Program(GlooObject):
             for i in range(count):
                 info = getActive.call(gl, self.handle, i)
                 name = info.name
-                m = name.match(regex)  # Check if xxx[0] instead of xx
+                m = name.match(regex)  # Check if xx[0] instead of xx
                 if m:
-                    name = m.group(0)
-                    for i in range(info.size):
-                        container.append(('%s[%d]' % (name, i), info.type))
+                    # Note that info.size can smaller than what is defined in
+                    # GLSL; the compiler might know that only xx[0] is used. 
+                    name = m[1]
+                    for j in range(info.size):
+                        container.append(('%s[%d]' % (name, j), info.type))
                 else:
                     container.append((name, info.type))
                 self.locations[name] = getLocation.call(gl, self.handle, name)
@@ -237,7 +239,6 @@ class Program(GlooObject):
             raise RuntimeError('Cannot set uniform when program has no code')
         # Get handle for the uniform
         handle = self.locations.get(name, -1)
-        count = 1
         if handle < 0:
             if name not in self._known_invalid:
                 self._known_invalid.append(name)
@@ -246,13 +247,14 @@ class Program(GlooObject):
         # Mark as set
         if name in self._unset_variables:
             self._unset_variables.remove(name)
+        count = 1
         if not type_.startswith('mat'):
             a_type = {'int': 'float', 'bool': 'float'}.get(type_, type_.lstrip('ib'))
             count = value.length // (self.ATYPEINFO[a_type][0])
         if count > 1:
-            for ii in range(count):
-                if '%s[%s]' % (name, ii) in self._unset_variables:
-                    name_ = '%s[%s]' % (name, ii)
+            for j in range(count):
+                if '%s[%s]' % (name, j) in self._unset_variables:
+                    name_ = '%s[%s]' % (name, j)
                     if name_ in self._unset_variables:
                         self._unset_variables.remove(name_)
         # Look up function to call
