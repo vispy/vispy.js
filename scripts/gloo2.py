@@ -5,6 +5,8 @@ from flexx.pyscript import this_is_js, window
 if this_is_js():  # noqa - fool flake8
     console = window.console
 
+__version__ = '0.3'
+
 
 def check_error(gl, when='periodic check'):
     """Check this from time to time to detect GL errors.
@@ -266,8 +268,7 @@ class Program(GlooObject):
         else:
             self._gl[funcname](handle, value)
     
-    # todo: Better api
-    def set_attribute(self, name, type_, vbo_info, value=None):
+    def set_attribute(self, name, type_, value, stride=0, offset=0):
         """Set an attribute value. 
         
         An attribute represents per-vertex data and can only be used
@@ -279,22 +280,29 @@ class Program(GlooObject):
             The name by which the attribute is known in the GLSL code.
         type_ : str
             The type of the attribute, e.g. 'float', 'vec2', etc.
-        vbo_info : 3 element tuple or None
-            If given, it is (vbo, stride, offset). It can also be None,
-            in which case value argument must be an array with the
-            actual values to apply to all vertices (as in a uniform).
-        value : list of scalars
-            Should only be applied if the vbo_info argument is None.
+        value : VertexBuffer, array
+            If value is a VertexBuffer, it is used (with stride and offset)
+            for the vertex data. If value is an array, its used to set
+            the value of all vertices (similar to a uniform).
+        stide : int, default 0
+            The stride to "sample" the vertex data inside the buffer. Unless
+            multiple vertex data are packed into a single buffer, this should
+            be zero.
+        offset : int, default 0
+            The offset to "sample" the vertex data inside the buffer. Unless
+            multiple vertex data are packed into a single buffer, or only
+            a part of the data must be used, this should probably be zero.
         """
         if not self._linked:
             raise RuntimeError('Cannot set attribute when program has no code')
+        is_vbo = isinstance(value, VertexBuffer)
         
         # Get handle for the attribute, first try cache
         handle = self.locations.get(name, -1)
         if handle < 0:
             if name not in self._known_invalid:
                 self._known_invalid.append(name)
-                if vbo_info and vbo_info[0] != 0 and vbo_info[2] > 0:
+                if is_vbo and offset > 0:
                     pass  # Probably an unused element in a structured VBO
                 else:
                     console.log('Variable %s is not an active attribute' % name)
@@ -305,19 +313,14 @@ class Program(GlooObject):
         # Program needs to be active in order to set uniforms
         self.activate()
         # Triage depending on VBO or tuple data
-        if vbo_info is None:
-            # Look up function call
+        if not is_vbo:
             funcname = self.ATYPEMAP[type_]
-            # Set data
             self._attributes[name] = 0, handle, funcname, value
         else:
-            # Get meta data
-            vbo, stride, offset = vbo_info
             size, gtype = self.ATYPEINFO[type_]
-            # Set data
             funcname = 'vertexAttribPointer'
             args = size, gtype, self._gl.FALSE, stride, offset
-            self._attributes[name] = vbo.handle, handle, funcname, args
+            self._attributes[name] = value.handle, handle, funcname, args
 
     def _pre_draw(self):
         """Prepare for drawing."""
@@ -423,7 +426,6 @@ class Buffer(GlooObject):
             self._gl.bufferData(self._target, nbytes, self._usage)
             self._buffer_size = nbytes
     
-    #  todo: make possible to auto-resize?
     def set_data(self, offset, data):
         """Set the buffer data.
         
