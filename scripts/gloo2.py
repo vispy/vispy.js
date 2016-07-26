@@ -464,7 +464,7 @@ class Texture2D(GlooObject):
         'Int16Array': 5122,  # SHORT,
         'Uint16Array': 5123,  # UNSIGNED_SHORT,
         'Int32Array': 5124,  # INT,
-        'Int32Array': 5125,  # UNSIGNED_INT,
+        'Uint32Array': 5125,  # UNSIGNED_INT,
         # 'xx' : gl.GL_HALF_FLOAT,
         'Float32Array': 5126,  # FLOAT,
         # 'Float64Array' : gl.GL_DOUBLE
