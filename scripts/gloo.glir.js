@@ -191,7 +191,7 @@ function get_gl_type(object_type) {
 }
 
 var _gl_attachment_map = {
-    'color': ['COLOR_ATTACHMENT0', 'RGBA'],
+    'color': ['COLOR_ATTACHMENT0', 'RGBA4'],
     'depth': ['DEPTH_ATTACHMENT', 'DEPTH_COMPONENT16'],
     'stencil': ['STENCIL_ATTACHMENT', 'STENCIL_INDEX8'],
 };
@@ -463,11 +463,11 @@ glir.prototype.delete = function(c, args) {
     }
     else if (cls == 'FrameBuffer') {
         debug("Deleting frame buffer '{0}'.".format(id));
-        c.gl.deleteFrameBuffer(handle);
+        c.gl.deleteFramebuffer(handle);
     }
     else if (cls == 'RenderBuffer') {
         debug("Deleting render buffer '{0}'.".format(id));
-        c.gl.deleteRenderBuffer(handle);
+        c.gl.deleteRenderbuffer(handle);
     }
     else if (cls == 'Texture2D') {
         debug("Deleting texture '{0}'.".format(id));
