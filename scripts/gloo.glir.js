@@ -310,24 +310,35 @@ VispyCanvas.prototype.set_deferred = function(deferred) {
 VispyCanvas.prototype.execute_pending_commands = function() {
     /* Return the number of executed GLIR commands. */
     var q = this.glir_queue.get();
+    var execute_up_to = -1;
     if (q.length == 0) {
         return 0;
     }
-    for (var i = 0; i < q.length; i++) {
-        // console.debug(q[i]);
-        this.command(q[i], false);
 
-        if (q[i][0] === 'DRAW') {
-            // We need to stop at every draw call to let the animation loop
-            // redraw the canvas and automatically swap the webgl buffers.
-            // If we don't, we can run in to cases where a "glClear" command
-            // causes the buffers to be swapped.
+    // Only start executing if we see a SWAP command
+    // Any 'draw' command (clear, draw, etc) will cause the browser to
+    // swap the webgl drawing buffers. If we start executing draw commands
+    // before we are ready for the buffers to swap we could get an incomplete
+    // canvas (only 'clear' being completed, less than all of the
+    // expected objects being drawn, etc).
+    // This technically only happens if not all the GLIR commands were
+    // received by the time this animation loop started.
+    for (var i = 0; i < q.length; i++) {
+        if (q[i][0] === 'SWAP') {
+            execute_up_to = i;
             break;
         }
     }
-    debug("Processed {0} events.".format(i));
-    // this.glir_queue.clear();
-    this.glir_queue._queue = this.glir_queue._queue.slice(i + 1);
+    // Execute all commands up to and including the SWAP
+    for (i = 0; i <= execute_up_to; i++) {
+        this.command(q[i], false);
+    }
+
+    if (execute_up_to >= 0) {
+        debug("Processed {0} events.".format(i));
+        // this.glir_queue.clear();
+        this.glir_queue._queue = this.glir_queue._queue.slice(execute_up_to + 1);
+    }
     return q.length;
 };
 
@@ -373,6 +384,10 @@ glir.prototype.init = function(c) {
 glir.prototype.current = function(c, args) {
     init_env_cache(c);
     c.gl.bindFramebuffer(c.gl.FRAMEBUFFER, null);
+};
+
+glir.prototype.swap = function(c, args) {
+
 };
 
 glir.prototype.create = function(c, args) {
@@ -642,7 +657,7 @@ glir.prototype.texture = function(c, args) {
     if (program.texture_uniforms.hasOwnProperty(sampler_name)) {
         // This program has had this sampler uniform name set before
         // Let's remove the old one
-        console.debug('Removing previously assigned texture for \'{0}\''.format(sampler_name))
+        debug('Removing previously assigned texture for \'{0}\''.format(sampler_name))
         delete program.textures[program.texture_uniforms[sampler_name]];
     }
 
