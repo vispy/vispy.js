@@ -335,11 +335,11 @@ VispyCanvas.prototype.execute_pending_commands = function() {
     }
 
     if (execute_up_to >= 0) {
-        debug("Processed {0} events.".format(i));
+        debug("Processed {0} events.".format(execute_up_to + 1));
         // this.glir_queue.clear();
         this.glir_queue._queue = this.glir_queue._queue.slice(execute_up_to + 1);
     }
-    return q.length;
+    return execute_up_to + 1;
 };
 
 VispyCanvas.prototype.command = function(command, deferred) {
