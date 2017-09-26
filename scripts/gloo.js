@@ -5,6 +5,17 @@ function init_webgl(c) {
     var canvas = c.$el.get(0);
     c.gl = canvas.getContext("webgl") ||
            canvas.getContext("experimental-webgl");
+    var ext = c.gl.getExtension('OES_standard_derivatives') || c.gl.getExtension('MOZ_OES_standard_derivatives') || c.gl.getExtension('WEBKIT_OES_standard_derivatives');
+    if (ext === null) {
+        console.warn('Extension \'OES_standard_derivatives\' is not supported in this browser. Some features may not work as expected');
+    }
+    var ext = c.gl.getExtension('OES_element_index_uint') ||
+        c.gl.getExtension('MOZ_OES_element_index_uint') ||
+        c.gl.getExtension('WEBKIT_OES_element_index_uint');
+    if (ext === null) {
+        console.warn('Extension \'OES_element_index_uint\' is not supported in this browser. Some features may not work as expected');
+    }
+    // c.gl.getExtension('EXT_shader_texture_lod');
 }
 
 

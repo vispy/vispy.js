@@ -48,7 +48,7 @@ Vispy.prototype.unregister = function(canvas) {
         this._canvases.splice(index, 1);
     }
     // console.debug("Unregister canvas", canvas);
-}
+};
 
 
 /* Event loop */
@@ -82,7 +82,7 @@ Vispy.prototype.start_event_loop = function() {
         }
     })();
 
-    this._is_loop_running = true
+    this._is_loop_running = true;
     console.debug("Event loop started.");
 };
 

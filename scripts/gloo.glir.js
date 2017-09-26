@@ -4,6 +4,7 @@ var data = require('./data.js');
 
 var debug = util.debug;
 var to_array_buffer = data.to_array_buffer;
+var JUST_DELETED = 'JUST_DELETED';
 
 /* WebGL utility functions */
 function viewport(c) {
@@ -17,7 +18,7 @@ function clear(c, color) {
 
 function compile_shader(c, type, source) {
     //source = "precision mediump float;\n" + source;
-    source = source.replace(/\\n/g, "\n")
+    source = source.replace(/\\n/g, "\n");
 
     var shader = c.gl.createShader(c.gl[type]);
 
@@ -75,9 +76,17 @@ function deactivate_attribute(c, attribute_handle) {
 }
 
 function activate_texture(c, texture_handle, sampler_handle, texture_index) {
+    if (texture_handle === JUST_DELETED) {
+        return;
+    }
     c.gl.activeTexture(c.gl.TEXTURE0 + texture_index);
     c.gl.bindTexture(c.gl.TEXTURE_2D, texture_handle);
     // c.gl.uniform1i(sampler_handle, 0);
+}
+
+function deactivate_texture(c, texture_handle, sampler_handle, texture_index) {
+    c.gl.activeTexture(c.gl.TEXTURE0 + texture_index);
+    c.gl.bindTexture(c.gl.TEXTURE_2D, null);
 }
 
 function set_texture_data(c, object_handle, gl_type, format, width, height, array) {
@@ -85,11 +94,14 @@ function set_texture_data(c, object_handle, gl_type, format, width, height, arra
 
     // TODO: choose a better alignment
     c.gl.pixelStorei(c.gl.UNPACK_ALIGNMENT, 1);
-    
-    if (array.getContext) {
+
+    if (array === null) {
+        // special texture attached to frame buffer to be rendered to
+        c.gl.texImage2D(gl_type, 0, format, width, height, 0, format, c.gl.UNSIGNED_BYTE, array);
+    } else if (array.getContext) {
         // A canvas object
         c.gl.texImage2D(gl_type, 0, c.gl.RGBA, c.gl.RGBA, c.gl.UNSIGNED_BYTE, array);
-    } else if (array.canvas) {    
+    } else if (array.canvas) {
         // A context object
         c.gl.texImage2D(gl_type, 0, c.gl.RGBA, c.gl.RGBA, c.gl.UNSIGNED_BYTE, array.canvas);
     } else {
@@ -178,6 +190,20 @@ function get_gl_type(object_type) {
     return _gl_type_map[object_type];
 }
 
+var _gl_attachment_map = {
+    'color': ['COLOR_ATTACHMENT0', 'RGBA4'],
+    'depth': ['DEPTH_ATTACHMENT', 'DEPTH_COMPONENT16'],
+    'stencil': ['STENCIL_ATTACHMENT', 'STENCIL_INDEX8'],
+};
+
+function get_attachment_type(type_str) {
+    return _gl_attachment_map[type_str][0];
+}
+
+function get_attachment_format(type_str) {
+    return _gl_attachment_map[type_str][1];
+}
+
 function parse_enum(c, str) {
     // Parse an enum or combination of enums stored in a string.
     var strs = str.split('|');
@@ -189,6 +215,68 @@ function parse_enum(c, str) {
     return value;
 }
 
+function validate_framebuffer(c) {
+    var status = c.gl.checkFramebufferStatus(c.gl.FRAMEBUFFER);
+    if (status == c.gl.FRAMEBUFFER_COMPLETE) {
+        return;
+    }
+    // c.gl.FRAMEBUFFER_INCOMPLETE_FORMATS: // not in es 2.0
+    //     'Internal format of attachment is not renderable.'
+    if (status == c.gl.FRAMEBUFFER_INCOMPLETE_ATTACHMENT) {
+        throw 'FrameBuffer attachments are incomplete.';
+    }
+    else if (status == c.gl.FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT) {
+        throw 'No valid attachments in the FrameBuffer.';
+    }
+    else if (status == c.gl.FRAMEBUFFER_INCOMPLETE_DIMENSIONS) {
+        throw 'attachments do not have the same width and height.';
+    }
+    else if (status == c.gl.FRAMEBUFFER_UNSUPPORTED) {
+        throw 'Combination of internal formats used by attachments is not supported.';
+    }
+    else {
+        throw 'Unknown framebuffer error' + status;
+    }
+}
+
+function activate_framebuffer(c, framebuffer_id) {
+    var fb = c._ns[framebuffer_id];
+    var stack = c.env.fb_stack;
+    if (stack.length == 0) {
+        stack.push(null);
+    }
+
+    if (stack[stack.length - 1] === fb.handle) {
+        debug("Frame buffer already active {0}".format(framebuffer_id));
+        return;
+    }
+    debug("Binding frame buffer {0}.".format(framebuffer_id));
+    c.gl.bindFramebuffer(c.gl.FRAMEBUFFER, fb.handle);
+    stack.push(fb.handle);
+}
+
+function deactivate_framebuffer(c, framebuffer_id) {
+    var fb = c._ns[framebuffer_id];
+    var stack = c.env.fb_stack;
+    if (stack.length == 0) {
+        stack.push(null);
+    }
+
+    while (stack[stack.length - 1] === fb.handle) {
+        // Deactivate current frame buffer
+        stack.pop(); // 'unbind' current buffer
+    }
+    // Activate previous frame buffer
+    // NOTE: out of bounds index if trying to unbind the default (null) framebuffer
+    debug("Binding previous frame buffer");
+    c.gl.bindFramebuffer(c.gl.FRAMEBUFFER, stack[stack.length - 1]);
+}
+
+function init_env_cache(c) {
+    c.env = {
+        'fb_stack': [],
+    };
+}
 
 
 /* Glir queue prototype */
@@ -197,18 +285,18 @@ function GlirQueue() {
 }
 GlirQueue.prototype.clear = function() {
     this._queue = [];
-}
+};
 GlirQueue.prototype.append = function(e) {
     this._queue.push(e);
-}
+};
 GlirQueue.prototype.append_multi = function(es) {
     for (var i = 0; i < es.length; i++) {
         this._queue.push(es[i]);
     }
-}
+};
 GlirQueue.prototype.get = function() {
     return this._queue;
-}
+};
 Object.defineProperty(GlirQueue.prototype, "length", {
     get: function() { return this._queue.length; },
 });
@@ -217,25 +305,45 @@ Object.defineProperty(GlirQueue.prototype, "length", {
 /* Vispy canvas GLIR methods */
 VispyCanvas.prototype.set_deferred = function(deferred) {
     this._deferred = deferred;
-}
+};
 
 VispyCanvas.prototype.execute_pending_commands = function() {
     /* Return the number of executed GLIR commands. */
     var q = this.glir_queue.get();
+    var execute_up_to = -1;
     if (q.length == 0) {
         return 0;
     }
+
+    // Only start executing if we see a SWAP command
+    // Any 'draw' command (clear, draw, etc) will cause the browser to
+    // swap the webgl drawing buffers. If we start executing draw commands
+    // before we are ready for the buffers to swap we could get an incomplete
+    // canvas (only 'clear' being completed, less than all of the
+    // expected objects being drawn, etc).
+    // This technically only happens if not all the GLIR commands were
+    // received by the time this animation loop started.
     for (var i = 0; i < q.length; i++) {
-        // console.debug(q[i]);
+        if (q[i][0] === 'SWAP') {
+            execute_up_to = i;
+            break;
+        }
+    }
+    // Execute all commands up to and including the SWAP
+    for (i = 0; i <= execute_up_to; i++) {
         this.command(q[i], false);
     }
-    debug("Processed {0} events.".format(q.length));
-    this.glir_queue.clear();
-    return q.length;
+
+    if (execute_up_to >= 0) {
+        debug("Processed {0} events.".format(execute_up_to + 1));
+        // this.glir_queue.clear();
+        this.glir_queue._queue = this.glir_queue._queue.slice(execute_up_to + 1);
+    }
+    return execute_up_to + 1;
 };
 
 VispyCanvas.prototype.command = function(command, deferred) {
-    if (deferred == undefined) {
+    if (deferred === undefined) {
         deferred = this._deferred;
     }
     var method = command[0].toLowerCase();
@@ -267,11 +375,18 @@ glir.prototype.init = function(c) {
     c._ns = {};
     // Deferred mode is enabled by default.
     c._deferred = true;
+    // Per-context storage for GLIR objects (framebuffer stack, etc)
+    init_env_cache(c);
     c.glir_queue = new GlirQueue();
     c.glir = this;
 };
 
 glir.prototype.current = function(c, args) {
+    init_env_cache(c);
+    c.gl.bindFramebuffer(c.gl.FRAMEBUFFER, null);
+};
+
+glir.prototype.swap = function(c, args) {
 
 };
 
@@ -294,6 +409,23 @@ glir.prototype.create = function(c, args) {
             size: 0,  // current size of the buffer
         };
     }
+    else if (cls == 'FrameBuffer') {
+        debug("Creating frame buffer '{0}'.".format(id));
+        c._ns[id] = {
+            object_type: cls,
+            handle: c.gl.createFramebuffer(),
+            size: 0,  // current size of the buffer
+            validated: false,
+        };
+    }
+    else if (cls == 'RenderBuffer') {
+        debug("Creating render buffer '{0}'.".format(id));
+        c._ns[id] = {
+            object_type: cls,
+            handle: c.gl.createRenderbuffer(),
+            size: 0,  // current size of the buffer
+        };
+    }
     else if (cls == 'Texture2D') {
         debug("Creating texture '{0}'.".format(id));
         c._ns[id] = {
@@ -310,7 +442,8 @@ glir.prototype.create = function(c, args) {
             handle: c.gl.createProgram(),
             attributes: {},
             uniforms: {},
-            textures: {},
+            textures: {}, // map texture_id -> sampler_name, sampler_handle, number, handle
+            texture_uniforms: {}, // map sampler_name -> texture_id
         };
     }
 };
@@ -319,6 +452,7 @@ glir.prototype.delete = function(c, args) {
     var id = args[0];
     var cls = c._ns[id].object_type;
     var handle = c._ns[id].handle;
+    c._ns[id].handle = JUST_DELETED;
     if (cls == 'VertexBuffer') {
         debug("Deleting vertex buffer '{0}'.".format(id));
         c.gl.deleteBuffer(handle);
@@ -326,6 +460,14 @@ glir.prototype.delete = function(c, args) {
     else if (cls == 'IndexBuffer') {
         debug("Deleting index buffer '{0}'.".format(id));
         c.gl.deleteBuffer(handle);
+    }
+    else if (cls == 'FrameBuffer') {
+        debug("Deleting frame buffer '{0}'.".format(id));
+        c.gl.deleteFramebuffer(handle);
+    }
+    else if (cls == 'RenderBuffer') {
+        debug("Deleting render buffer '{0}'.".format(id));
+        c.gl.deleteRenderbuffer(handle);
     }
     else if (cls == 'Texture2D') {
         debug("Deleting texture '{0}'.".format(id));
@@ -353,7 +495,7 @@ glir.prototype.shaders = function(c, args) {
     // Attach shaders.
     debug("Attaching shaders for program '{0}'".format(program_id));
     attach_shaders(c, handle, vs, fs);
-}
+};
 
 glir.prototype.size = function(c, args) {
     var object_id = args[0];
@@ -374,16 +516,25 @@ glir.prototype.size = function(c, args) {
         // format in the object, and we'll use this information in the
         // subsequent DATA call.
     }
+    else if (object_type == 'RenderBuffer') {
+        c.gl.bindRenderbuffer(c.gl.RENDERBUFFER, object_handle);
+        object.format = c.gl[get_attachment_format(format)];
+        // size is Y, X, Z
+        // assume Y is rows (height), X is columns (width)
+        // assume Z is color information (ignored)
+        c.gl.renderbufferStorage(c.gl.RENDERBUFFER, object.format, size[1], size[0]);
+        c.gl.bindRenderbuffer(c.gl.RENDERBUFFER, null);
+    }
     // Buffers
     else
     {
         debug("Setting buffer size to {1} for '{0}'.".format(object_id, size));
         // Reuse the buffer if the existing size is not null.
-        set_buffer_data(c, object_handle, gl_type, 0, size, false)
+        set_buffer_data(c, object_handle, gl_type, 0, size, false);
     }
     // Save the size.
     object.size = size;
-}
+};
 
 glir.prototype.data = function(c, args) {
     var object_id = args[0];
@@ -422,7 +573,7 @@ glir.prototype.data = function(c, args) {
         set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0);
         object.size = array.byteLength;
     }
-}
+};
 
 glir.prototype.attribute = function(c, args) {
     var program_id = args[0];
@@ -448,7 +599,7 @@ glir.prototype.attribute = function(c, args) {
         stride: stride,
         offset: offset,
     };
-}
+};
 
 glir.prototype.uniform = function(c, args) {
     var program_id = args[0];
@@ -480,34 +631,47 @@ glir.prototype.uniform = function(c, args) {
     var uniform_handle = uniform_info[0];
     var uniform_function = uniform_info[1];
     set_uniform(c, uniform_handle, uniform_function, value);
-}
+};
 
 glir.prototype.texture = function(c, args) {
     var program_id = args[0];
     var sampler_name = args[1];
     var texture_id = args[2];
-    // var texture_number = args[3];  // active texture
 
+    var program = c._ns[program_id];
+    var program_handle = program.handle;
     var texture_handle = c._ns[texture_id].handle;
-    var program_handle = c._ns[program_id].handle;
-    // The texture number is the number of textures existing in the program.
-    var texture_number = Object.keys(c._ns[program_id].textures).length;
 
-    debug("Initializing texture '{0}' number {1} for program '{2}'.".format(
-            texture_id, texture_number, program_id
+    if (texture_handle === JUST_DELETED) {
+        debug("Removing texture '{0}' from program '{1}'".format(
+            texture_id, program_id
         ));
+        delete program.textures[texture_id];
+        return;
+    }
+
+    debug("Initializing texture '{0}' for program '{1}'.".format(
+        texture_id, program_id));
+
+    // FIXME: Probably should store textures by sampler name, not texture id
+    if (program.texture_uniforms.hasOwnProperty(sampler_name)) {
+        // This program has had this sampler uniform name set before
+        // Let's remove the old one
+        debug('Removing previously assigned texture for \'{0}\''.format(sampler_name))
+        delete program.textures[program.texture_uniforms[sampler_name]];
+    }
 
     // Set the sampler uniform value.
     var sampler_handle = c.gl.getUniformLocation(program_handle, sampler_name);
-    c.gl.uniform1i(sampler_handle, texture_number);
+    program.texture_uniforms[sampler_name] = texture_id;
 
     c._ns[program_id].textures[texture_id] = {
         sampler_name: sampler_name,
         sampler_handle: sampler_handle,
-        number: texture_number,
+        number: -1, // assigned later
         handle: texture_handle,
     };
-}
+};
 
 glir.prototype.interpolation = function(c, args) {
     var texture_id = args[0];
@@ -520,7 +684,7 @@ glir.prototype.interpolation = function(c, args) {
     c.gl.texParameteri(gl_type, c.gl.TEXTURE_MIN_FILTER, c.gl[min]);
     c.gl.texParameteri(gl_type, c.gl.TEXTURE_MAG_FILTER, c.gl[mag]);
     c.gl.bindTexture(gl_type, null);
-}
+};
 
 glir.prototype.wrapping = function(c, args) {
     var texture_id = args[0];
@@ -534,7 +698,7 @@ glir.prototype.wrapping = function(c, args) {
     c.gl.texParameteri(gl_type, c.gl.TEXTURE_WRAP_T,
                        c.gl[wrapping[1].toUpperCase()]);
     c.gl.bindTexture(gl_type, null);
-}
+};
 
 glir.prototype.draw = function(c, args) {
     var program_id = args[0];
@@ -544,6 +708,10 @@ glir.prototype.draw = function(c, args) {
     var program_handle = c._ns[program_id].handle;
     var attributes = c._ns[program_id].attributes;
     var textures = c._ns[program_id].textures;
+    var texture_number = 0;
+
+    // Activate the program.
+    c.gl.useProgram(program_handle);
 
     // Activate all attributes in the program.
     for (attribute_name in attributes) {
@@ -557,13 +725,20 @@ glir.prototype.draw = function(c, args) {
     // Activate all textures in the program.
     for (texture_id in textures) {
         var texture = textures[texture_id];
-        debug("Activating texture '{0}' for program '{1}'.".format(
-            texture_id, program_id));
+        if (c._ns[texture_id].handle === JUST_DELETED) {
+            debug("Ignoring texture '{0}' from program '{1}'".format(
+                texture_id, program_id
+            ));
+            texture.handle = JUST_DELETED;
+            continue;
+        }
+        texture.number = texture_number;
+        texture_number += 1;
+        debug("Activating texture '{0}' for program '{1}' as number '{2}'.".format(
+            texture_id, program_id, texture.number));
         activate_texture(c, texture.handle, texture.sampler_handle, texture.number);
+        c.gl.uniform1i(texture.sampler_handle, texture.number);
     }
-
-    // Activate the program.
-    c.gl.useProgram(program_handle);
 
     // Draw the program.
     if (selection.length == 2) {
@@ -581,8 +756,8 @@ glir.prototype.draw = function(c, args) {
         var count = selection[2];
         // Get the index buffer handle from the namespace.
         var index_buffer_handle = c._ns[index_buffer_id].handle;
-        debug("Rendering program '{0}' with {1} and index buffer '{2}'.".format(
-            program_id, mode, index_buffer_id));
+        debug("Rendering program '{0}' with {1} and index buffer '{2}' of type '{3}'.".format(
+            program_id, mode, index_buffer_id, index_buffer_type));
         // Activate the index buffer.
         c.gl.bindBuffer(c.gl.ELEMENT_ARRAY_BUFFER, index_buffer_handle);
         c.gl.drawElements(c.gl[mode], count, c.gl[index_buffer_type], 0);
@@ -594,7 +769,75 @@ glir.prototype.draw = function(c, args) {
             attribute_name, program_id));
         deactivate_attribute(c, attributes[attribute_name].handle);
     }
-}
+
+    // Deactivate textures.
+    var new_textures = {};
+    for (texture_id in textures) {
+        var texture = textures[texture_id];
+        debug("Deactivating texture '{0}' for program '{1}'.".format(
+            texture_id, program_id));
+        deactivate_texture(c, texture.handle, texture.sampler_handle, texture.number);
+
+        // Don't include any of the textures that were deleted in this program
+        if (c._ns[texture_id].handle != JUST_DELETED) {
+            new_textures[texture_id] = texture;
+        }
+    }
+    c._ns[program_id].textures = new_textures;
+};
+
+glir.prototype.attach = function(c, args) {
+    var framebuffer_id = args[0];
+    var attach_type = c.gl[get_attachment_type(args[1])];
+    var object_id = args[2];
+    var object;
+    activate_framebuffer(c, framebuffer_id);
+    if (object_id == 0) {
+        debug('Attaching RenderBuffer object {0} to framebuffer {1}'.format(object_id, framebuffer_id));
+        c.gl.framebufferRenderbuffer(c.gl.FRAMEBUFFER, attach_type, c.gl.RENDERBUFFER, null);
+    } else {
+        object = c._ns[object_id];
+        debug('Attaching {0} object {1} to framebuffer {2} for {3}'.format(object.object_type, object_id, framebuffer_id, args[1]));
+        if (object.object_type == 'RenderBuffer') {
+            c.gl.bindRenderbuffer(c.gl.RENDERBUFFER, object.handle);
+            c.gl.framebufferRenderbuffer(c.gl.FRAMEBUFFER, attach_type, c.gl.RENDERBUFFER, object.handle);
+            c.gl.bindRenderbuffer(c.gl.RENDERBUFFER, null);
+        }
+        else if (object.object_type == 'Texture2D') {
+            // null or undefined
+            if (object.shape.length == 0) {
+                debug('Setting empty texture data to unset texture before attaching to framebuffer');
+                set_texture_data(c, object.handle, c.gl.TEXTURE_2D,
+                    c.gl[object.format], object.size[1], object.size[0], null);
+            }
+            // INFO: 0 is for mipmap level 0 (default) of the texture
+            c.gl.bindTexture(c.gl.TEXTURE_2D, object.handle);
+            c.gl.framebufferTexture2D(c.gl.FRAMEBUFFER, attach_type, c.gl.TEXTURE_2D, object.handle, 0);
+            c.gl.bindTexture(c.gl.TEXTURE_2D, null);
+        }
+    }
+    c._ns[framebuffer_id].validated = false;
+    deactivate_framebuffer(c, framebuffer_id);
+};
+
+glir.prototype.framebuffer = function(c, args) {
+    var framebuffer_id = args[0];
+    var bind = args[1];
+    var fb = c._ns[framebuffer_id];
+
+    if (bind) {
+        debug('Binding framebuffer {0}'.format(framebuffer_id));
+        activate_framebuffer(c, framebuffer_id);
+        if (!fb.validated) {
+            fb.validated = true;
+            validate_framebuffer(c);
+        }
+    }
+    else {
+        debug('Unbinding framebuffer {0}'.format(framebuffer_id));
+        deactivate_framebuffer(c, framebuffer_id);
+    }
+};
 
 glir.prototype.func = function(c, args) {
     var name = args[0];
@@ -608,7 +851,7 @@ glir.prototype.func = function(c, args) {
     }
 
     var func = c.gl[name];
-    var func_args = args.slice(1)
+    var func_args = args.slice(1);
     func.apply(c.gl, func_args);
 };
 
