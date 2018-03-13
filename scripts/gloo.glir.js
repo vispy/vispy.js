@@ -89,7 +89,31 @@ function deactivate_texture(c, texture_handle, sampler_handle, texture_index) {
     c.gl.bindTexture(c.gl.TEXTURE_2D, null);
 }
 
-function set_texture_data(c, object_handle, gl_type, format, width, height, array) {
+function _get_alignment(width) {
+    /* Determines a textures byte alignment.
+
+    If the width isn't a power of 2
+    we need to adjust the byte alignment of the image.
+    The image height is unimportant
+
+    www.opengl.org/wiki/Common_Mistakes#Texture_upload_and_pixel_reads
+
+    we know the alignment is appropriate
+    if we can divide the width by the
+    alignment cleanly
+    valid alignments are 1,2,4 and 8
+    4 is the default
+
+    */
+    var alignments = [8, 4, 2, 1];
+    for (var i = 0; i < alignments.length; i++) {
+        if (width % alignments[i] == 0) {
+            return alignments[i];
+        }
+    }
+}
+
+function set_texture_data(c, object_handle, gl_type, format, width, height, array, offset, shape, dtype) {
     c.gl.bindTexture(gl_type, object_handle);
 
     // TODO: choose a better alignment
@@ -105,13 +129,26 @@ function set_texture_data(c, object_handle, gl_type, format, width, height, arra
         // A context object
         c.gl.texImage2D(gl_type, 0, c.gl.RGBA, c.gl.RGBA, c.gl.UNSIGNED_BYTE, array.canvas);
     } else {
-        // An array
-        // BUGFIX: the last argument cannot be an ArrayBuffer: it needs to be
-        // a uint8 view.
         var array_view;
-        array_view = new Uint8Array(array);
-        c.gl.texImage2D(gl_type, 0, format, width, height, 0,
-                        format, c.gl.UNSIGNED_BYTE, array_view);
+        if (dtype == c.gl.FLOAT) {
+            array_view = new Float32Array(array);
+        } else {
+            array_view = new Uint8Array(array);
+        }
+
+        // if this isn't initializing the texture (texImage2D) then see if we
+        // can set just part of the texture
+        if (offset && shape && ((shape[0] !== height) || (shape[1] !== width))) {
+            var width = shape[shape.length - 2] * shape[shape.length - 1];
+            var alignment = _get_alignment(width);
+            c.gl.pixelStorei(c.gl.UNPACK_ALIGNMENT, alignment);
+            c.gl.texSubImage2D(gl_type, 0, offset[1], offset[0],
+                shape[1], shape[0], format, dtype, array_view);
+        } else {
+            c.gl.pixelStorei(c.gl.UNPACK_ALIGNMENT, 1);
+            c.gl.texImage2D(gl_type, 0, format, width, height, 0,
+                format, dtype, array_view);
+        }
     }
 }
 
@@ -142,6 +179,14 @@ function set_uniform(c, uniform_handle, uniform_function, value) {
         // Scalar uniforms.
         c.gl[uniform_function](uniform_handle, array);
     }
+}
+
+var _dtype_to_gl_dtype = {
+    'float32': 'FLOAT',
+    'uint8': 'UNSIGNED_BYTE',
+};
+function get_gl_dtype(dtype) {
+    return _dtype_to_gl_dtype[dtype];
 }
 
 var _attribute_type_map = {
@@ -561,8 +606,10 @@ glir.prototype.data = function(c, args) {
         var format = c.gl[object.format];
 
         debug("Setting texture data for '{0}'.".format(object_id));
-        // QUESTION: how to support offset for textures?
-        set_texture_data(c, object_handle, gl_type, format, width, height, array);
+        // `data.shape` comes from notebook backend and vispy webgl extension
+        // without it, subimage texture writes do not work
+        var gl_dtype = c.gl[get_gl_dtype(data.dtype)];
+        set_texture_data(c, object_handle, gl_type, format, width, height, array, offset, data.shape, gl_dtype);
         object.shape = shape;
     }
     // Buffers
