@@ -16,11 +16,9 @@ function clear(c, color) {
     c.gl.clear(c.gl.COLOR_BUFFER_BIT);
 }
 
-function compile_shader(c, type, source) {
-    //source = "precision mediump float;\n" + source;
+function compile_shader(c, shader, source) {
+    // TODO: Convert desktop GLSL code if needed
     source = source.replace(/\\n/g, "\n");
-
-    var shader = c.gl.createShader(c.gl[type]);
 
     c.gl.shaderSource(shader, source);
     c.gl.compileShader(shader);
@@ -28,21 +26,10 @@ function compile_shader(c, type, source) {
     if (!c.gl.getShaderParameter(shader, c.gl.COMPILE_STATUS))
     {
         console.error(c.gl.getShaderInfoLog(shader));
-        return null;
+        return false;
     }
 
-    return shader;
-}
-
-function attach_shaders(c, program, vertex, fragment) {
-    c.gl.attachShader(program, vertex);
-    c.gl.attachShader(program, fragment);
-    c.gl.linkProgram(program);
-
-    if (!c.gl.getProgramParameter(program, c.gl.LINK_STATUS))
-    {
-        console.warn("Could not initialise shaders on program '{0}'.".format(program));
-    }
+    return true;
 }
 
 function create_attribute(c, program, name) {
@@ -491,6 +478,20 @@ glir.prototype.create = function(c, args) {
             texture_uniforms: {}, // map sampler_name -> texture_id
         };
     }
+    else if (cls == 'VertexShader') {
+        debug("Creating VertexShader '{0}'.".format(id));
+        c._ns[id] = {
+            object_type: cls,
+            handle: c.gl.createShader(c.gl['VERTEX_SHADER']),
+        };
+    }
+    else if (cls == 'FragmentShader') {
+        debug("Creating FragmentShader '{0}'.".format(id));
+        c._ns[id] = {
+            object_type: cls,
+            handle: c.gl.createShader(c.gl['FRAGMENT_SHADER']),
+        };
+    }
 };
 
 glir.prototype.delete = function(c, args) {
@@ -522,24 +523,10 @@ glir.prototype.delete = function(c, args) {
         debug("Deleting program '{0}'.".format(id));
         c.gl.deleteProgram(handle);
     }
-};
-
-glir.prototype.shaders = function(c, args) {
-    var program_id = args[0];
-    var vertex_code = args[1];
-    var fragment_code = args[2];
-
-    // Get the program handle.
-    var handle = c._ns[program_id].handle;
-
-    // Compile shaders.
-    debug("Compiling shaders for program '{0}'.".format(program_id));
-    var vs = compile_shader(c, 'VERTEX_SHADER', vertex_code);
-    var fs = compile_shader(c, 'FRAGMENT_SHADER', fragment_code);
-
-    // Attach shaders.
-    debug("Attaching shaders for program '{0}'".format(program_id));
-    attach_shaders(c, handle, vs, fs);
+    else if (cls.indexOf('Shader') >= 0) {
+        debug("Deleting shader '{0}'.".format(id));
+        c.gl.deleteShader(handle);
+    }
 };
 
 glir.prototype.size = function(c, args) {
@@ -590,11 +577,16 @@ glir.prototype.data = function(c, args) {
     var object_handle = object.handle;
     var gl_type = c.gl[get_gl_type(object_type)];
 
-    // Get a TypedArray.
-    var array = to_array_buffer(data);
-
+    if (object_type.indexOf('Shader') >= 0) {
+        // Compile shader code to shader object
+        // Shaders only have 3 elements in the DATA command
+        // so use offset (3rd arg)
+        compile_shader(c, object_handle, offset);
+    }
     // Textures.
-    if (object_type.indexOf('Texture') >= 0) {
+    else if (object_type.indexOf('Texture') >= 0) {
+        // Get a TypedArray.
+        var array = to_array_buffer(data);
         // The texture shape was specified in SIZE
         var shape = object.size;
         // WARNING: this is height and then width, not the other way
@@ -615,6 +607,9 @@ glir.prototype.data = function(c, args) {
     // Buffers
     else
     {
+        // Get a TypedArray.
+        var array = to_array_buffer(data);
+
         debug("Setting buffer data for '{0}'.".format(object_id));
         // Reuse the buffer if the existing size is not null.
         set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0);
@@ -834,17 +829,30 @@ glir.prototype.draw = function(c, args) {
 };
 
 glir.prototype.attach = function(c, args) {
-    var framebuffer_id = args[0];
-    var attach_type = c.gl[get_attachment_type(args[1])];
+    // framebuffer or shader object ID
+    var dst_id = args[0];
+    var dst_obj = c._ns[dst_id];
+    var dst_type = dst_obj.object_type;
+    var dst_handle = dst_obj.handle;
+    if (dst_type == 'Program') {
+        // attaching to program, must be a shader we're attaching
+        var shader_id = args[1];
+        var shader_handle = c._ns[shader_id].handle;
+        c.gl.attachShader(dst_handle, shader_handle);
+        return;
+    }
+
+    // Attach to framebuffer
     var object_id = args[2];
+    var attach_type = c.gl[get_attachment_type(args[1])];
     var object;
-    activate_framebuffer(c, framebuffer_id);
+    activate_framebuffer(c, dst_id);
     if (object_id == 0) {
-        debug('Attaching RenderBuffer object {0} to framebuffer {1}'.format(object_id, framebuffer_id));
+        debug('Attaching RenderBuffer object {0} to framebuffer {1}'.format(object_id, dst_id));
         c.gl.framebufferRenderbuffer(c.gl.FRAMEBUFFER, attach_type, c.gl.RENDERBUFFER, null);
     } else {
         object = c._ns[object_id];
-        debug('Attaching {0} object {1} to framebuffer {2} for {3}'.format(object.object_type, object_id, framebuffer_id, args[1]));
+        debug('Attaching {0} object {1} to framebuffer {2} for {3}'.format(object.object_type, object_id, dst_id, args[1]));
         if (object.object_type == 'RenderBuffer') {
             c.gl.bindRenderbuffer(c.gl.RENDERBUFFER, object.handle);
             c.gl.framebufferRenderbuffer(c.gl.FRAMEBUFFER, attach_type, c.gl.RENDERBUFFER, object.handle);
@@ -863,8 +871,18 @@ glir.prototype.attach = function(c, args) {
             c.gl.bindTexture(c.gl.TEXTURE_2D, null);
         }
     }
-    c._ns[framebuffer_id].validated = false;
-    deactivate_framebuffer(c, framebuffer_id);
+    c._ns[dst_id].validated = false;
+    deactivate_framebuffer(c, dst_id);
+};
+
+glir.prototype.link = function(c, args) {
+    var program_handle = c._ns[args[0]].handle;
+    c.gl.linkProgram(program_handle);
+
+    if (!c.gl.getProgramParameter(program_handle, c.gl.LINK_STATUS))
+    {
+        console.warn("Could not initialise shaders on program '{0}'.".format(program_handle));
+    }
 };
 
 glir.prototype.framebuffer = function(c, args) {
