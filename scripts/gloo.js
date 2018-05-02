@@ -15,6 +15,19 @@ function init_webgl(c) {
     if (ext === null) {
         console.warn('Extension \'OES_element_index_uint\' is not supported in this browser. Some features may not work as expected');
     }
+    var ext = c.gl.getExtension('OES_texture_float');
+    // ||
+    //     c.gl.getExtension('MOZ_OES_element_index_uint') ||
+    //     c.gl.getExtension('WEBKIT_OES_element_index_uint');
+    if (ext === null) {
+        console.warn('Extension \'OES_texture_float\' is not supported in this browser. Some features may not work as expected');
+    }
+
+    var ext = c.gl.getExtension('OES_texture_float_linear');
+    if (ext === null) {
+        console.warn('Extension \'OES_texture_float_linear\' is not supported in this browser. Some features may not work as expected');
+    }
+
     // c.gl.getExtension('EXT_shader_texture_lod');
 }
 
