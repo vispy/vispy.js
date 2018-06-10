@@ -18,6 +18,12 @@ function clear(c, color) {
 
 function compile_shader(c, shader, source) {
     // TODO: Convert desktop GLSL code if needed
+    console.log(typeof source);
+    if (typeof source !== 'string') {
+        // assume we have a buffer
+        source = String.fromCharCode.apply(null, new Uint8Array(source));
+
+    }
     source = source.replace(/\\n/g, "\n");
 
     c.gl.shaderSource(shader, source);
@@ -576,17 +582,15 @@ glir.prototype.data = function(c, args) {
     var object_type = object.object_type; // VertexBuffer, IndexBuffer, or Texture2D
     var object_handle = object.handle;
     var gl_type = c.gl[get_gl_type(object_type)];
+    // Get a TypedArray.
+    var array = to_array_buffer(data);
 
     if (object_type.indexOf('Shader') >= 0) {
         // Compile shader code to shader object
-        // Shaders only have 3 elements in the DATA command
-        // so use offset (3rd arg)
-        compile_shader(c, object_handle, offset);
+        compile_shader(c, object_handle, array);
     }
     // Textures.
     else if (object_type.indexOf('Texture') >= 0) {
-        // Get a TypedArray.
-        var array = to_array_buffer(data);
         // The texture shape was specified in SIZE
         var shape = object.size;
         // WARNING: this is height and then width, not the other way
@@ -607,9 +611,6 @@ glir.prototype.data = function(c, args) {
     // Buffers
     else
     {
-        // Get a TypedArray.
-        var array = to_array_buffer(data);
-
         debug("Setting buffer data for '{0}'.".format(object_id));
         // Reuse the buffer if the existing size is not null.
         set_buffer_data(c, object_handle, gl_type, offset, array, object.size > 0);
