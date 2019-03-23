@@ -1,10 +1,6 @@
-var screenful = require("./lib/screenfull.min.js");
 var VispyCanvas = require('./vispycanvas.js');
 var gloo = require('./gloo.js');
 var events = require('./events.js');
-var util = require('./util.js');
-var data = require('./data.js');
-require("./lib/jquery.mousewheel.min.js")($);
 
 var Vispy = function() {
     // Constructor of the Vispy library.
@@ -62,7 +58,7 @@ Vispy.prototype.start_event_loop = function() {
                   window.webkitRequestAnimationFrame ||
                   window.mozRequestAnimationFrame    ||
                   function(c){
-                    window.setTimeout(c, 1000. / 60.);
+                    window.setTimeout(c, 1000.0 / 60.0);
                   };
     })();
 

@@ -25,7 +25,7 @@ function to_array_buffer(data) {
     // Return a TypedArray from a JSON object describing a data buffer.
     // storage_type is one of 'javascript_array', 'javascript_typed_array',
     // 'base64', 'png'
-    var storage_type = data["storage_type"];
+    var storage_type = data.storage_type;
 
     // data can also be just a normal typed array, in which case we just return
     // the argument value.
@@ -33,8 +33,8 @@ function to_array_buffer(data) {
         return data;
     }
 
-    var data_type = data["data_type"];
-    var contents = data["buffer"];
+    var data_type = data.data_type;
+    var contents = data.buffer;
 
     if (storage_type == "javascript_array") {
         // A regular JavaScript array, the type must be specified in 'data_type'.

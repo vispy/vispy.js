@@ -39,15 +39,18 @@
         } var e = Error('Not a container: ' + b); e.name='TypeError'; throw e;
     };
     var _pyfunc_equals = function equals (a, b) { // nargs: 2
+        var i, k, iseq;
         if (a == null || b == null) {
         } else if (Array.isArray(a) && Array.isArray(b)) {
-            var i = 0, iseq = a.length == b.length;
+            i = 0;
+            iseq = a.length == b.length;
             while (iseq && i < a.length) {iseq = equals(a[i], b[i]); i+=1;}
             return iseq;
         } else if (a.constructor === Object && b.constructor === Object) {
             var akeys = Object.keys(a), bkeys = Object.keys(b);
             akeys.sort(); bkeys.sort();
-            var i=0, k, iseq = equals(akeys, bkeys);
+            i=0;
+            iseq = equals(akeys, bkeys);
             while (iseq && i < akeys.length) {k=akeys[i]; iseq = equals(a[k], b[k]); i+=1;}
             return iseq;
         } return a == b;
@@ -106,7 +109,7 @@
         else {return null;}
     };
     var _pymeth_keys = function () { // nargs: 0
-        if (typeof this['keys'] === 'function') return this.keys.apply(this, arguments);
+        if (typeof this.keys === 'function') return this.keys.apply(this, arguments);
         return Object.keys(this);
     };
     var _pymeth_lstrip = function (chars) { // nargs: 0 1
@@ -126,10 +129,12 @@
     var _pymeth_repeat = function(count) { // nargs: 0
         if (this.repeat) return this.repeat(count);
         if (count < 1) return '';
-        var result = '', pattern = this.valueOf();
+        var result = '';
+        var pattern = this.valueOf();
         while (count > 1) {
             if (count & 1) result += pattern;
-            count >>= 1, pattern += pattern;
+            count >>= 1;
+            pattern += pattern;
         }
         return result + pattern;
     };
@@ -170,7 +175,7 @@
             }
             for (stub2_itr = 0; stub2_itr < stub1_seq.length; stub2_itr += 1) {
                 e = stub1_seq[stub2_itr];
-                msg=_pyfunc_add(msg, e)
+                msg = _pyfunc_add(msg, e);
             }
             err_3 = new Error('RuntimeError:' + ("OpenGL got errors (" + when + "): " + msg + "")); err_3.name = "RuntimeError"; throw err_3;
         }
@@ -180,7 +185,7 @@
     GlooObject = function () {
         // Abstract base class for all Gloo classes.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     GlooObject.prototype._base_class = Object;
     GlooObject.prototype._class_name = "GlooObject";
     
@@ -189,21 +194,21 @@
         this._gl = gl;
         this.handle = null;
         this._create();
-        if (!(this.handle !== null)) {throw "AssertionError: " + "this.handle !== null";}
+        if (this.handle === null) {throw "AssertionError: " + "this.handle !== null";}
         return null;
     };
 
     GlooObject.prototype._create = function () {
         var err_2;
         err_2 = new Error('NotImplementedError:' + ""); err_2.name = "NotImplementedError"; throw err_2;
-        return null;
+        // return null;
     };
 
 
     Program = function () {
         // The program is the central component to connect gloo objects and shaders.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     Program.prototype = Object.create(GlooObject.prototype);
     Program.prototype._base_class = GlooObject.prototype;
     Program.prototype._class_name = "Program";
@@ -563,7 +568,7 @@
     Buffer = function () {
         // Base buffer class for vertex data or index data.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     Buffer.prototype = Object.create(GlooObject.prototype);
     Buffer.prototype._base_class = GlooObject.prototype;
     Buffer.prototype._class_name = "Buffer";
@@ -627,7 +632,7 @@
     VertexBuffer = function () {
         // A buffer for vertex data.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     VertexBuffer.prototype = Object.create(Buffer.prototype);
     VertexBuffer.prototype._base_class = Buffer.prototype;
     VertexBuffer.prototype._class_name = "VertexBuffer";
@@ -637,7 +642,7 @@
     IndexBuffer = function () {
         // A buffer for index data.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     IndexBuffer.prototype = Object.create(Buffer.prototype);
     IndexBuffer.prototype._base_class = Buffer.prototype;
     IndexBuffer.prototype._class_name = "IndexBuffer";
@@ -647,7 +652,7 @@
     Texture2D = function () {
         // A 2 dimensional regular grid.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     Texture2D.prototype = Object.create(GlooObject.prototype);
     Texture2D.prototype._base_class = GlooObject.prototype;
     Texture2D.prototype._class_name = "Texture2D";
@@ -803,7 +808,7 @@
         // which can be set via uniforms, using the ``u_shape`` and ``u_tiles``
         // attributes of this object.
         _pyfunc_instantiate(this, arguments);
-    }
+    };
     Texture3DLike.prototype = Object.create(Texture2D.prototype);
     Texture3DLike.prototype._base_class = Texture2D.prototype;
     Texture3DLike.prototype._class_name = "Texture3DLike";

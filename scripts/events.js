@@ -1,4 +1,6 @@
 var VispyCanvas = require('./vispycanvas.js');
+var screenfull = require("./lib/screenfull.min.js");
+require("./lib/jquery.mousewheel.min.js")($);
 
 /* Internal functions */
 function get_pos(c, e) {
@@ -112,8 +114,9 @@ var _button_map = {
     1: 3,   // middle
 };
 function gen_mouse_event(c, e, type) {
+    var button;
     if (c._eventinfo.is_button_pressed)
-        var button = _button_map[e.button];
+        button = _button_map[e.button];
     else
         button = null;
     var pos = get_pos(c.$el.get(0), e);
@@ -130,7 +133,7 @@ function gen_mouse_event(c, e, type) {
         'press_event': press_event,
 
         'last_event': null,  // HACK: disabled to avoid recursion problems
-    }
+    };
     return event;
 }
 
@@ -138,21 +141,21 @@ function gen_resize_event(c, size) {
     var event = {
         'type': 'resize',
         'size': size,
-    }
+    };
     return event;
 }
 
 function gen_paint_event(c) {
     var event = {
         'type': 'paint',
-    }
+    };
     return event;
 }
 
 function gen_initialize_event(c) {
     var event = {
         'type': 'initialize',
-    }
+    };
     return event;
 }
 
@@ -164,7 +167,7 @@ function gen_key_event(c, e, type) {
         'modifiers': modifiers,
         'key_code': get_key_code(e),
         'last_event': null,  // HACK: disabled to avoid recursion problems
-    }
+    };
     return event;
 }
 
@@ -237,7 +240,7 @@ VispyCanvas.prototype._set_size = function(size) {
     this.width = size[0];
     this.height = size[1];
     return size;
-}
+};
 VispyCanvas.prototype.paint = function() {
     /* Add a paint event in the event queue. */
     var event = gen_paint_event(this);
@@ -286,7 +289,7 @@ VispyCanvas.prototype.toggle_fullscreen = function() {
 
 VispyCanvas.prototype.deactivate_context_menu = function() {
     document.oncontextmenu = function () { return false; };
-}
+};
 
 VispyCanvas.prototype.resizable = function() {
     var that = this;
@@ -327,7 +330,7 @@ function EventQueue(maxlen) {
 }
 EventQueue.prototype.clear = function() {
     this._queue = [];
-}
+};
 EventQueue.prototype.append = function(e, compress) {
     // Compression allows several similar consecutive events to be merged
     // into a single event, for performance reasons (notably, 'mouse_move').
@@ -364,10 +367,10 @@ EventQueue.prototype.append = function(e, compress) {
         // Remove the reference to the removed event in order to clean the GC.
         this._queue[0].last_event = null;
     }
-}
+};
 EventQueue.prototype.get = function() {
     return this._queue;
-}
+};
 Object.defineProperty(EventQueue.prototype, "length", {
     get: function() { return this._queue.length; },
 });
@@ -397,7 +400,7 @@ function init_app(c) {
         'press_event': null,
         'last_event': null,
         'delta': null,
-    }
+    };
 
     // HACK: boolean stating whether a mouse button is pressed.
     // This is necessary because e.button==0 in two cases: no
@@ -453,8 +456,8 @@ function init_app(c) {
     if (c.$el.mousewheel != undefined) {
         c.$el.mousewheel(function(e) {
             var event = gen_mouse_event(c, e, 'mouse_wheel');
-            event.delta = [e.deltaX * e.deltaFactor * .01,
-                           e.deltaY * e.deltaFactor * .01];
+            event.delta = [e.deltaX * e.deltaFactor * 0.01,
+                           e.deltaY * e.deltaFactor * 0.01];
 
             // Vispy callbacks.
             c._mouse_wheel(event);

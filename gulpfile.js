@@ -1,5 +1,5 @@
 var gulp = require('gulp'),
-    gutil = require('gulp-util'),
+    log = require('fancy-log'),
     jshint = require('gulp-jshint'),
     source = require('vinyl-source-stream'),
     buffer = require('vinyl-buffer'),
@@ -22,11 +22,11 @@ var srcs = [
 
 function rebundle(file) {
     if (file) {
-        gutil.log('Rebundling,', path.basename(file[0]), 'has changes.');
+        log('Rebundling,', path.basename(file[0]), 'has changes.');
     }
 
     return this.bundle()
-        .on('error', gutil.log.bind(gutil, 'Browserify Error'))         // log errors if they happen
+        .on('error', log.bind(log, 'Browserify Error'))         // log errors if they happen
         .pipe(source(outfile))
         .pipe(buffer())
         .pipe(gulp.dest(outdir)) //generate the non-minified
@@ -82,4 +82,4 @@ gulp.task('jshint', function () {
 /*****
  * Base task
  *****/
-gulp.task('default', ['jshint', 'build']);
+gulp.task('default', gulp.series('jshint', 'build'));
