@@ -18,7 +18,6 @@ function clear(c, color) {
 
 function compile_shader(c, shader, source) {
     // TODO: Convert desktop GLSL code if needed
-    console.log(typeof source);
     if (typeof source !== 'string') {
         // assume we have a buffer
         source = String.fromCharCode.apply(null, new Uint8Array(source));
