@@ -62,7 +62,7 @@ Vispy.prototype.start_event_loop = function() {
                   window.webkitRequestAnimationFrame ||
                   window.mozRequestAnimationFrame    ||
                   function(c){
-                    window.setTimeout(c, 1000. / 60.);
+                    window.setTimeout(c, 1000.0 / 60.0);
                   };
     })();
 

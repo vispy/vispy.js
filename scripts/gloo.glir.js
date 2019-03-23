@@ -132,8 +132,8 @@ function set_texture_data(c, object_handle, gl_type, format, width, height, arra
         // if this isn't initializing the texture (texImage2D) then see if we
         // can set just part of the texture
         if (offset && shape && ((shape[0] !== height) || (shape[1] !== width))) {
-            var width = shape[shape.length - 2] * shape[shape.length - 1];
-            var alignment = _get_alignment(width);
+            var new_width = shape[shape.length - 2] * shape[shape.length - 1];
+            var alignment = _get_alignment(new_width);
             c.gl.pixelStorei(c.gl.UNPACK_ALIGNMENT, alignment);
             c.gl.texSubImage2D(gl_type, 0, offset[1], offset[0],
                 shape[1], shape[0], format, dtype, array_view);
@@ -488,14 +488,14 @@ glir.prototype.create = function(c, args) {
         debug("Creating VertexShader '{0}'.".format(id));
         c._ns[id] = {
             object_type: cls,
-            handle: c.gl.createShader(c.gl['VERTEX_SHADER']),
+            handle: c.gl.createShader(c.gl.VERTEX_SHADER),
         };
     }
     else if (cls == 'FragmentShader') {
         debug("Creating FragmentShader '{0}'.".format(id));
         c._ns[id] = {
             object_type: cls,
-            handle: c.gl.createShader(c.gl['FRAGMENT_SHADER']),
+            handle: c.gl.createShader(c.gl.FRAGMENT_SHADER),
         };
     }
 };
@@ -651,6 +651,9 @@ glir.prototype.uniform = function(c, args) {
     var value = args[3];
 
     var program_handle = c._ns[program_id].handle;
+    var uniform_handle;
+    var uniform_function;
+    var uniform_info;
 
     c.gl.useProgram(program_handle);
 
@@ -661,8 +664,8 @@ glir.prototype.uniform = function(c, args) {
         debug("Creating uniform '{0}' for program '{1}'.".format(
                 name, program_id
             ));
-        var uniform_handle = c.gl.getUniformLocation(program_handle, name);
-        var uniform_function = get_uniform_function(type);
+        uniform_handle = c.gl.getUniformLocation(program_handle, name);
+        uniform_function = get_uniform_function(type);
         // We cache the uniform handle and the uniform function name as well.
         c._ns[program_id].uniforms[name] = [uniform_handle, uniform_function];
     }
@@ -670,9 +673,9 @@ glir.prototype.uniform = function(c, args) {
     debug("Setting uniform '{0}' to '{1}' with {2} elements.".format(
             name, value, value.length
         ));
-    var uniform_info = c._ns[program_id].uniforms[name];
-    var uniform_handle = uniform_info[0];
-    var uniform_function = uniform_info[1];
+    uniform_info = c._ns[program_id].uniforms[name];
+    uniform_handle = uniform_info[0];
+    uniform_function = uniform_info[1];
     set_uniform(c, uniform_handle, uniform_function, value);
 };
 
@@ -700,7 +703,7 @@ glir.prototype.texture = function(c, args) {
     if (program.texture_uniforms.hasOwnProperty(sampler_name)) {
         // This program has had this sampler uniform name set before
         // Let's remove the old one
-        debug('Removing previously assigned texture for \'{0}\''.format(sampler_name))
+        debug('Removing previously assigned texture for \'{0}\''.format(sampler_name));
         delete program.textures[program.texture_uniforms[sampler_name]];
     }
 
@@ -752,6 +755,9 @@ glir.prototype.draw = function(c, args) {
     var attributes = c._ns[program_id].attributes;
     var textures = c._ns[program_id].textures;
     var texture_number = 0;
+    var texture;
+    var attribute_name;
+    var texture_id;
 
     // Activate the program.
     c.gl.useProgram(program_handle);
@@ -767,7 +773,7 @@ glir.prototype.draw = function(c, args) {
 
     // Activate all textures in the program.
     for (texture_id in textures) {
-        var texture = textures[texture_id];
+        texture = textures[texture_id];
         if (c._ns[texture_id].handle === JUST_DELETED) {
             debug("Ignoring texture '{0}' from program '{1}'".format(
                 texture_id, program_id
@@ -784,10 +790,11 @@ glir.prototype.draw = function(c, args) {
     }
 
     // Draw the program.
+    var count;
     if (selection.length == 2) {
         // Draw the program without index buffer.
         var start = selection[0];
-        var count = selection[1];
+        count = selection[1];
         debug("Rendering program '{0}' with {1}.".format(
             program_id, mode));
         c.gl.drawArrays(c.gl[mode], start, count);
@@ -796,7 +803,7 @@ glir.prototype.draw = function(c, args) {
         // Draw the program with index buffer.
         var index_buffer_id = selection[0];
         var index_buffer_type = selection[1];
-        var count = selection[2];
+        count = selection[2];
         // Get the index buffer handle from the namespace.
         var index_buffer_handle = c._ns[index_buffer_id].handle;
         debug("Rendering program '{0}' with {1} and index buffer '{2}' of type '{3}'.".format(
@@ -816,7 +823,7 @@ glir.prototype.draw = function(c, args) {
     // Deactivate textures.
     var new_textures = {};
     for (texture_id in textures) {
-        var texture = textures[texture_id];
+        texture = textures[texture_id];
         debug("Deactivating texture '{0}' for program '{1}'.".format(
             texture_id, program_id));
         deactivate_texture(c, texture.handle, texture.sampler_handle, texture.number);
