@@ -1,6 +1,6 @@
 var VispyCanvas = require('./vispycanvas.js');
-var screenfull = require("./lib/screenfull.min.js");
-require("./lib/jquery.mousewheel.min.js")($);
+var screenfull = require("screenfull");
+var mousewheel = require("jquery-mousewheel");
 
 /* Internal functions */
 function get_pos(c, e) {
