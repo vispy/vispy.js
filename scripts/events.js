@@ -1,6 +1,7 @@
 var VispyCanvas = require('./vispycanvas.js');
 var screenfull = require("screenfull");
-var mousewheel = require("jquery-mousewheel");
+require('jquery');
+require('jquery-ui/ui/widgets/resizable');
 
 /* Internal functions */
 function get_pos(c, e) {
@@ -381,7 +382,7 @@ function init_app(c) {
 
     // Generate a resize event when the user resizes the canvas with
     // jQuery resizable.
-    c.$el.resize(function(e) {
+    c.$el.on("resize", function(e) {
             c.resize([e.width(), e.height()]);
         }
     );
@@ -407,7 +408,7 @@ function init_app(c) {
     // button is pressed, or the left button is pressed.
     c._eventinfo.is_button_pressed = 0;
 
-    c.$el.mousemove(function(e) {
+    c.$el.on("mousemove", function(e) {
         var event = gen_mouse_event(c, e, 'mouse_move');
 
         // Vispy callbacks.
@@ -417,7 +418,7 @@ function init_app(c) {
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
-    c.$el.mousedown(function(e) {
+    c.$el.on("mousedown", function(e) {
         ++c._eventinfo.is_button_pressed;
         var event = gen_mouse_event(c, e, 'mouse_press');
 
@@ -430,7 +431,7 @@ function init_app(c) {
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
-    c.$el.mouseup(function(e) {
+    c.$el.on("mouseup", function(e) {
         --c._eventinfo.is_button_pressed;
         var event = gen_mouse_event(c, e, 'mouse_release');
 
@@ -443,35 +444,35 @@ function init_app(c) {
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
-    c.$el.click(function(e) {
+    c.$el.on("click", function(e) {
         // Reset the last press event.
         c._eventinfo.press_event = null;
     });
-    c.$el.dblclick(function(e) {
+    c.$el.on("dblclick", function(e) {
 
         // Reset the last press event.
         c._eventinfo.press_event = null;
     });
     // This requires the mouse wheel jquery plugin.
-    if (c.$el.mousewheel != undefined) {
-        c.$el.mousewheel(function(e) {
-            var event = gen_mouse_event(c, e, 'mouse_wheel');
-            event.delta = [e.deltaX * e.deltaFactor * 0.01,
-                           e.deltaY * e.deltaFactor * 0.01];
+    c.$el.on("wheel", function(e) {
+        var event = gen_mouse_event(c, e, 'mouse_wheel');
+        // event.delta = [e.originalEvent.deltaX * e.deltaFactor * 0.01,
+        //                e.originalEvent.deltaY * e.deltaFactor * 0.01];
+        event.delta = [e.originalEvent.deltaX * 0.01,
+            e.originalEvent.deltaY * 0.01];
 
-            // Vispy callbacks.
-            c._mouse_wheel(event);
+        // Vispy callbacks.
+        c._mouse_wheel(event);
 
-            // Save the last event.
-            // c._eventinfo.last_event = event;
-            c.event_queue.append(event);
+        // Save the last event.
+        // c._eventinfo.last_event = event;
+        c.event_queue.append(event);
 
-            e.preventDefault();
-            e.stopPropagation();
-        });
-    }
+        e.preventDefault();
+        e.stopPropagation();
+    });
 
-    c.$el.keydown(function(e) {
+    c.$el.on("keydown", function(e) {
         var event = gen_key_event(c, e, 'key_press');
 
         // Vispy callbacks.
@@ -481,7 +482,7 @@ function init_app(c) {
         // c._eventinfo.last_event = event;
         c.event_queue.append(event);
     });
-    c.$el.keyup(function(e) {
+    c.$el.on("keyup", function(e) {
         var event = gen_key_event(c, e, 'key_release');
 
         // Vispy callbacks.
@@ -492,7 +493,7 @@ function init_app(c) {
         c.event_queue.append(event);
     });
 
-    c.$el.mouseout(function(e) {
+    c.$el.on("mouseout", function(e) {
     });
 }
 
