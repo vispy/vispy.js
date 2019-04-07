@@ -38,3 +38,18 @@ for more details.
 In the future, this library may include additional entry points to act as a
 standalone javascript library, but support for this has not been implemented
 at this time.
+
+## Developer Installation
+
+**Prerequisites**
+- [node](http://nodejs.org/)
+
+```bash
+npm install --save vispy
+```
+
+You can also automatically rebuild the package by running:
+
+```bash
+npm run watch
+```
