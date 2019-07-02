@@ -1,6 +1,6 @@
 {
   "name": "vispy",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "A Custom Jupyter Widget Library using WebGL for the VisPy Python Library",
   "author": "Vispy Development Team",
   "license": "BSD-3-Clause",
@@ -44,10 +44,10 @@
     "webpack-cli": "^3.3.0"
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^1.2.3",
-    "lodash": "^4.17.11",
-    "jquery": "^3.3.1",
+    "@jupyter-widgets/base": "^1.0.0 || ^2.0.0",
+    "jquery": "^3.4.1",
     "jquery-ui": "^1.12.1",
+    "lodash": "^4.17.11",
     "screenfull": "^4.1.0"
   },
   "jupyterlab": {
