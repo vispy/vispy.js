@@ -38,17 +38,17 @@
     "npm-run-all": "^4.1.5",
     "npm-watch": "^0.6.0",
     "raw-loader": "^2.0.0",
-    "rimraf": "^2.6.3",
+    "rimraf": "^2.7.1",
     "source-map-loader": "^0.2.4",
-    "webpack": "^4.29.6",
-    "webpack-cli": "^3.3.0"
+    "webpack": "^4.42.0",
+    "webpack-cli": "^3.3.11"
   },
   "dependencies": {
-    "@jupyter-widgets/base": "^1.0.0 || ^2.0.0",
+    "@jupyter-widgets/base": "^1 || ^2 || ^3",
     "jquery": "^3.4.1",
     "jquery-ui": "^1.12.1",
     "lodash": "^4.17.15",
-    "screenfull": "^4.1.0"
+    "screenfull": "^4.2.1"
   },
   "jupyterlab": {
     "extension": "lib/labplugin"
