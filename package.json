@@ -1,6 +1,6 @@
 {
   "name": "vispy",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "A Custom Jupyter Widget Library using WebGL for the VisPy Python Library",
   "author": "Vispy Development Team",
   "license": "BSD-3-Clause",
