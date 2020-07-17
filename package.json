@@ -40,14 +40,14 @@
     "raw-loader": "^2.0.0",
     "rimraf": "^2.7.1",
     "source-map-loader": "^0.2.4",
-    "webpack": "^4.42.0",
-    "webpack-cli": "^3.3.11"
+    "webpack": "^4.43.0",
+    "webpack-cli": "^3.3.12"
   },
   "dependencies": {
     "@jupyter-widgets/base": "^1 || ^2 || ^3",
-    "jquery": "^3.4.1",
+    "jquery": "^3.5.1",
     "jquery-ui": "^1.12.1",
-    "lodash": "^4.17.15",
+    "lodash": "^4.17.19",
     "screenfull": "^4.2.1"
   },
   "jupyterlab": {
