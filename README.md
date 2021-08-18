@@ -1,5 +1,15 @@
 # vispy.js
 
+## Current Project Status
+
+```diff
+- WARNING: Project is no longer maintained.
+```
+
+The VisPy Python library no longer uses vispy.js which means that the VisPy development team no longer has a use for it. Active development has ceased and the GitHub project has been archived making it read-only. If you'd like to become a maintainer of this library please make an issue on the [VisPy Python repository](https://github.com/vispy/vispy/issues).
+
+## Description
+
 This is a light JavaScript version of Vispy. This is used by the python
 library to create a jupyter notebook and jupyter lab extension. This allows
 the python code to communicate with the client's browser to display WebGL
